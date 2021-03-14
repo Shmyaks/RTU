@@ -1,0 +1,46 @@
+version: "3.9"
+services:
+  purchase_service:
+    build: project/purchase_service
+    restart: always
+    ports:
+      - 5000:5000
+    depends_on:
+      - db
+    volumes: 
+      - ./migrations:/usr/src/app/migrations
+    environment:
+      - DATABASE_URL=postgres+psycopg2://admin:123456@db:5432/database
+  shop_service:
+    build: project/shop_service
+    restart: always
+    ports: 
+      - 5001:5001
+    depends_on:
+      - db
+    volumes: 
+      - ./migrations:/usr/src/app/migrations
+    environment:
+      - DATABASE_URL=postgres+psycopg2://admin:123456@db:5432/database
+  factory:
+    build: project/factory
+    restart: always
+    ports: 
+      - 5003:5003
+    depends_on:
+      - db
+    volumes: 
+      - ./migrations:/usr/src/app/migration
+    environment:
+      - DATABASE_URL=postgres+psycopg2://admin:123456@db:5432/database
+  db:
+    image: postgres:13.2-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=database
+    volumes: 
+      - pgdata:/var/lib/postgresql/data
+volumes: 
+  pgdata:
