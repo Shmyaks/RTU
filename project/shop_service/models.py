@@ -33,71 +33,6 @@ class ProductSHEMA(Schema):
     }
 
 
-class UsersSHEMA(Schema):
-    type = "object"
-    properties = {
-        'user_id': {
-            'type': 'integer',
-            'format': 'int64'
-        },
-        'first_name': {
-            'type': 'string'
-        },
-        'second_name': {
-            'type': 'string',
-        },
-        'date_registration':{
-            'type': 'datetime'
-        },
-        'login': {
-            'type': 'string'
-        }
-    }
-
-
-class PurchaseSHEMA(Schema):
-    type = "object"
-    properties = {
-        'purchase_id': {
-            'type': 'integer',
-            'format': 'inte4'
-        },
-        'purchase_name': {
-            'type': 'string'
-        },
-        'price': {
-            'type': 'integer'
-        },
-        'date_purchase':{
-            'type': 'datetime',
-            'format': 'hz'
-        },
-        'user_id':{
-            'type': 'integer'
-        },
-        'user_category': {
-            'type': 'integer',
-            'format': 'int64'
-        },
-        'payment': {
-            'type': 'String',
-            'format': 'Choises'
-        },
-        'shop_id': {
-            'type': 'integer',
-            'format': 'int64'
-        },
-        'check_shop': {
-            'type': 'integer'
-        },
-        'category_shop': {
-            'type': 'integer',
-            'format': 'int64'
-        }
-    }
-    required = ["purchase_id", "purchase_name", "date_purchase", "user_id"]
-
-
 class ShopSHEMA(Schema):
     type = "object"
     properties = {
@@ -118,22 +53,6 @@ class ShopSHEMA(Schema):
     required = ["purchase_id", "purchase_name", "date_purchase", "user_id"]
 
 
-class UserCategorySHEMA(Schema):
-    type = "object"
-    properties = {
-        'user_category_id': {
-            'type': 'integer',
-            'format': 'int64'
-        },
-        'user_id':{
-            'type': 'integer',
-            'format': 'int64'
-        },
-        'user_category_name':{
-            'type': 'string'
-        },
-    }
-
 class ProductSHEMA(Schema):
     type = "object"
     properties = {
@@ -146,6 +65,10 @@ class ProductSHEMA(Schema):
         'product_price': {
             'type': 'int',
             'format': 'int64'
+        },
+        'count': {
+            'type':'int',
+            'format':'int64'
         },
         'shop_name': {
             'type': 'string'
@@ -163,4 +86,13 @@ class Product_listSHEMA(Schema):
     type = "object"
     properties = {
         'products': ProductSHEMA
+    }
+
+
+class MessageSHEMA(Schema):
+    type = "object"
+    properties = {
+        'message': {
+            'type': 'string'
+        }
     }

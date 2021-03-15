@@ -1,38 +1,6 @@
 
 from flask_restful_swagger_3 import Schema
 
-class CategorySHEMA(Schema):
-    type = "object"
-    properties = {
-        'category_id': {
-            'type': 'integer',
-            'format': 'int64'
-        },
-        'category_name': {
-            'type': 'string'
-        }
-    }
-
-class Category_listSHEMA(Schema):
-    type = "object"
-    properties = {
-        'categories': CategorySHEMA
-    }
-
-
-class ProductSHEMA(Schema):
-    type = "object"
-    properties = {
-        'product_id': {
-            'type': 'integer',
-            'format': 'int64'
-        },
-        'product_name': {
-            'type': 'string'
-        }
-    }
-
-
 class UsersSHEMA(Schema):
     type = "object"
     properties = {
@@ -55,23 +23,42 @@ class UsersSHEMA(Schema):
     }
 
 
+class productSHEMA(Schema):
+    type = "object"
+    properties = {
+        'product_name': {
+            'type': 'string'
+        },
+        'price': {
+            'type': 'integer',
+            'format': 'int64'
+        },
+        'purchase_id': {
+            'type': 'integer',
+            'format': 'int64'
+        }
+    }
+
 class PurchaseSHEMA(Schema):
     type = "object"
     properties = {
         'purchase_id': {
             'type': 'integer',
-            'format': 'inte4'
+            'format': 'int64'
         },
         'purchase_name': {
             'type': 'string'
         },
-        'price': {
+        'full_price': {
             'type': 'integer'
         },
         'date_purchase':{
             'type': 'datetime',
             'format': 'hz'
         },
+        'products': [
+            productSHEMA
+        ],
         'user_id':{
             'type': 'integer'
         },
@@ -87,35 +74,21 @@ class PurchaseSHEMA(Schema):
             'type': 'integer',
             'format': 'int64'
         },
-        'check_shop': {
+        'check_id_shop': {
             'type': 'integer'
         },
         'category_shop': {
-            'type': 'integer',
-            'format': 'int64'
+            'type': 'string'
         }
     }
     required = ["purchase_id", "purchase_name", "date_purchase", "user_id"]
 
 
-class ShopSHEMA(Schema):
+class Purchase_listSHEMA(Schema):
     type = "object"
     properties = {
-        'shop_id': {
-            'type': 'integer',
-            'format': 'int64'
-        },
-        'shop_name': {
-            'type': 'string'
-        },
-        'shop_phone': {
-            'type': 'string'
-        },
-        'isActive': {
-            'type': 'boolean'
-        }
+        'purchases': PurchaseSHEMA
     }
-    required = ["purchase_id", "purchase_name", "date_purchase", "user_id"]
 
 
 class UserCategorySHEMA(Schema):
@@ -134,33 +107,75 @@ class UserCategorySHEMA(Schema):
         },
     }
 
-class ProductSHEMA(Schema):
+
+class CategorySHEMA(Schema):
     type = "object"
     properties = {
-        'product_name': {
-            'type': 'string'
-        },
-        'product_description':{
-            'type':'string'
-        },
-        'product_price': {
-            'type': 'int',
+        'category_id': {
+            'type': 'integer',
             'format': 'int64'
-        },
-        'shop_name': {
-            'type': 'string'
         },
         'category_name': {
             'type': 'string'
-        },
-        'category_id': {
-            'type': 'int',
-            'format': 'int64'
         }
     }
 
-class Product_listSHEMA(Schema):
+
+class Category_listSHEMA(Schema):
     type = "object"
     properties = {
-        'products': ProductSHEMA
+        'categories': CategorySHEMA
+    }
+
+
+class UserCategory_listSHEMA(Schema):
+    type = "object"
+    properties = {
+        'user_categories': CategorySHEMA
+    }
+
+
+class MessageSHEMA(Schema):
+    type = "object"
+    properties = {
+        'message': {
+            'type': 'string'
+        }
+    }
+
+class ExamplePurchaseSHEMA(Schema):
+    type = "object"
+    properties = {
+        'user_id': {
+            'type': 'integer',
+            'format': 'int64'
+        },
+        'purchase_name': {
+            'type': 'string',
+            
+        },
+        'products': [
+            {
+                'product_name': {
+                    'type':'string'
+                },
+                'price': {
+                    'type': 'integer'
+                }
+            }
+        ],
+        'payment': {
+            'type': 'string',
+            'format': 'Choises'
+        },
+        'shop_id': {
+            'type': 'integer',
+            'format': 'int64'
+        },
+        'check_id_shop': {
+            'type': 'integer'
+        },
+        'category_shop': {
+            'type': 'string'
+        }
     }

@@ -3,12 +3,13 @@ from datetime import datetime
 from flask_restful_swagger_3 import Resource
 from flask import jsonify
 from flask_restful_swagger_3 import swagger
+import requests
 from flask_restful.reqparse import RequestParser
-from database import Users, Purchase, Shop, Product, Category, User_category, Purchase_items, TableCategory, Factory
-from models import UsersSHEMA, PurchaseSHEMA, ShopSHEMA, ProductSHEMA, CategorySHEMA, Product_listSHEMA, Category_listSHEMA#MODELS Dictionary database
+from database import Shop, Product, Category, TableCategory, Check
+from models import ShopSHEMA, Product_listSHEMA, Category_listSHEMA, MessageSHEMA#MODELS Dictionary database
 from __main__ import db
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from secrets import  token_hex  #For generation api_key shop and Factory 
+from secrets import  token_hex  #For generation api_key shop and Factory
+
 
 def to_dict(database_object, SHEMA, many = False): #Convert Object to SHEMA in Python dict. If need handle list -> use many = True, but !!USE!! the list schema
 
@@ -74,206 +75,17 @@ def ApiKey_shop_required(func):#api key shop
     
     return wrapper
 
-
-class Purchase_routes(Resource):
-    # @jwt_required() #Need to jwt token
-    # def post(self):
-    #     post_parser = RequestParser()
-    #     post_parser.add_argument('price', type=str, required=True)
-    #     post_parser.add_argument('purchase_name', type=str, help='Id of new group', required = True)
-    #     post_parser.add_argument('date_purchase', type=lambda x: datetime.strptime(x,'%Y-%m-%dT%H:%M:%S'), help = 'Datetime purchase', required = True)
-    #     args = post_parser.parse_args()
-    #     args['user_id'] = get_jwt_identity()
-    #     purchase = Purchase(**args)
-    #     db.session.add(purchase)
-    #     db.session.commit()
-        
-    #     return jsonify({"message":"Purchase {} was added".format(purchase.purchase_id)})
-
-    def get(self): 
-        get_parser = RequestParser()
-        get_parser.add_argument('user_id', required = True)
-        args = get_parser.parse_args()
-        real_user = Users.query.filter_by(user_id = get_jwt_identity()).first()
-        user = Users.query.filter_by(user_id = args['user_id']).first_or_404(description='The user_id {} does not exist '.format(args['user_id']))
-
-        if user.user_id != real_user.user_id and not real_user.admin:
-            return jsonify({'message':'You have not got permission'})
-        
-        list_purchases = []
-        for purchase in user.purchases:
-            list_purchases.append(to_dict(purchase,PurchaseSHEMA))
-            
-        return jsonify(list_purchases)
-
-    @jwt_required() #Need to jwt token
-    def delete(self):
-        get_parser = RequestParser()
-        get_parser.add_argument('user_id', type = int ,required = True)
-        get_parser.add_argument('purchase_id', type = int, required=True)
-        args = get_parser.parse_args()     
-        if args['user_id'] != get_jwt_identity() and Users.query.filter_by(admin = True, user_id = get_jwt_identity()).first():
-            return jsonify({'message':'You dont have permission'})
-        
-        user = Users.query.filter_by(user_id = args['user_id']).first_or_404(description='The user_id {} does not exist '.format(args['user_id']))
-        purchase = user.purchases.filter_by(purchase_id = args['purchase_id']).first_or_404(description = 'The purchase {} does not exist in user {}'.format(args['purchase_id'],args['user_id']))
-        
-        db.session.delete(purchase)
-        db.session.commit()
-
-        return jsonify({"message":"Purchase {} was deleted".format(args['purchase_id'])})
-
-    @jwt_required()
-    def put(self):
-        put_parser = RequestParser()
-        put_parser.add_argument('user_id', type = int, required = True)
-        put_parser.add_argument('purchase_id', type = int, required = True)
-        put_parser.add_argument('payment', type = str, choices=['Cash', 'Card'])
-        put_parser.add_argument('user_category_id', type = int)
-        args = put_parser.parse_args()
- 
-        if args['user_id'] != get_jwt_identity() and not Users.query.filter_by(admin = True, user_id = get_jwt_identity()):
-            return jsonify({'message':'You dont have permission'})
-        
-        user = Users.query.filter_by(user_id = args['user_id']).first_or_404(description='The user_id {} does not exist '.format(args['user_id']))
-        purchase = user.purchases.filter_by(purchase_id = args['purchase_id']).first_or_404(description = 'The purchase {} does not exist in user {}'.format(args['purchase_id'],args['user_id']))
-
-        if args['payment']:
-            purchase.payment = args['payment']
-        
-        if args['user_category_id']:
-            user.user_categories.filter_by(user_category_id = args['user_categpry_id']).first_or_404(description = 'The user_category_id {} does not exist in user {}'.format(args['purchase_id'],args['user_id']))
-            purchase.user_category_id = args['user_category_id']
-        
-        db.session.add(purchase)
-        db.session.commit()
-
-        return jsonify({'message':'Purchase {} was updated'.format(purchase.purchase_id)})
-
-class User_routes(Resource):
-    def get(self,user_id: int):
-        return jsonify(to_dict(Users.query.filter_by(user_id = user_id).first_or_404(description='The user_id {} does not exist'.format(user_id)), UsersSHEMA))
-
-    @jwt_required() #Need to jwt token
-    def put(self,user_id: int):
-        put_parser = RequestParser()
-        put_parser.add_argument('first_name', type = str, help = "first_name")
-        put_parser.add_argument('second_name', type = str, help = "second_name")
-        args = put_parser.parse_args()
-        user = Users.query.filter_by(user_id = user_id).first_or_404(description='The user_id {} does not exist'.format(user_id))
-        if user.user_id != get_jwt_identity() and not Users.query.filter_by(user_id = get_jwt_identity(), admin = True).first():
-            return jsonify({'message':'You dont have permission'})
-        
-        if args['first_name']:
-            user.first_name = args['first_name']
-        if args['second_name']:
-            user.second_name = args['second_name']
-        
-        db.session.add(user)
-        db.session.commit()
-        
-        return jsonify({"message": "User {} was updated".format(user.login)})
-
-
-class User_categories_routes(Resource):
-    @jwt_required()
-    def get(self):
-        get_parser = RequestParser()
-        get_parser.add_argument('user_id', type = int, required = True)
-        args = get_parser.parse_args()
-        user = Users.query.filter_by(user_id = args['user_id']).first_or_404(description='The user_id {} does not exist '.format(args['user_id']))
-        if args['user_id'] != get_jwt_identity() and not Users.query.filter_by(user_id = get_jwt_identity(), admin = True).first():
-            return jsonify({'message':'You dont have permission'})
-
-        list_categories = []
-        for category in user.user_categories:
-            list_categories.append(to_dict(category, CategorySHEMA)) 
-        
-        return jsonify(list_categories)
+@swagger.tags('Create_shop')
+class Create_shop(Resource): #only by admin. Admin can create a shop
+    '''Restful class for create_shop'''
     
-    @jwt_required()
+    @swagger.reorder_with(MessageSHEMA, response_code=200, description="Create success")
+    @swagger.parameter(_in='query', name='shop_name', schema={'type': 'string'}, required=True)
+    @swagger.parameter(_in='query', name='shop_address', schema={'type': 'string'}, required=True)
+    @swagger.parameter(_in='query', name='shop_phone', schema={'type': 'string'}, required=True)
     def post(self):
-        post_parser = RequestParser()
-        post_parser.add_argument('user_id')
-        post_parser.add_argument('user_category_name')
-        args = post_parser.parse_args()
-        user = Users.query.filter_by(user_id = args['user_id']).first_or_404(description='The user_id {} does not exist '.format(args['user_id']))
-        if args['user_id'] != get_jwt_identity() and not Users.query.filter_by(user_id = get_jwt_identity(), admin = True).first():
-            return jsonify({'message':'You dont have permission'})
+        '''Create shop'''
 
-        if user.user_categories.filter_by(user_category_name = args['user_category_name']).first():#search category from user
-            return jsonify({'message':'This category {} already exists'.format(args['user_category_name'])})
-
-        user_category = User_category(**args)
-        db.session.add(user_category)
-        db.session.commit()
-
-        return jsonify({'message':'user_category {} was added'.format(user_category.user_category_id)})
-
-    @jwt_required()
-    def put(self):
-        put_parser = RequestParser()
-        put_parser.add_argument('user_id', required = True)
-        put_parser.add_argument('user_category_name', required = True)
-        put_parser.add_argument('user_category_id', required = True)
-        args = put_parser.parse_args()
-        user = Users.query.filter_by(user_id = args['user_id']).first_or_404(description='The user_id {} does not exist '.format(args['user_id']))
-        category = Users.query.filter_by(user_category_id = args['user_category_id']).first_or_404(description='The user_category_id {} does not exist '.format(args['user_category_id']))
-
-        if category.user_id != get_jwt_identity() or not Users.query.filter_by(admin = True, user_id = get_jwt_identity()):
-            return jsonify({'message':'You dont have permission'})
-
-        if user.user_categories.filter_by(user_category_name = args['user_category_name']).first():#search category from user
-            return jsonify({'message':'This category {} already exists'.format(args['user_category_name'])})
-        
-        category.user_category_name = args['user_category_name']
-        db.session.add(category)
-        db.session.commit()
-
-        return jsonify({'message':'Category {} was updated'.format(category.category_id)})
-
-class User_registration(Resource):
-    def post(self):
-        post_parser = RequestParser()
-        post_parser.add_argument('first_name', type=str, help ="Name", required = True)
-        post_parser.add_argument('second_name', type=str, required = True)
-        post_parser.add_argument('login', type=str, required = True)
-        post_parser.add_argument('password', type=str, required = True)
-        args = post_parser.parse_args()
-        result = Users.query.filter_by(login=args['login']).first()
-        if result:
-            return jsonify({"message":"This login is use"})
-        
-        user = Users(**args)
-        db.session.add(user)
-        db.session.commit()
-       
-        return jsonify({"message":"Register is successful"})
-
-
-class User_login(Resource):
-    def post(self):
-        post_parser = RequestParser()
-        post_parser.add_argument('login', type=str, required = True)
-        post_parser.add_argument('password', type=str, required = True)
-        args = post_parser.parse_args()
-        user = Users.query.filter_by(login = args['login']).first()
-        if user is None or not user.check_password(args['password']):
-            return jsonify({"message":"Invalid login or password"})
-        
-        access_token = access_token = create_access_token(identity=user.user_id) #Create_jwt_token and add identity
-        
-        return jsonify({"message":"Login is successful", "token": access_token})#give token
-        
-
-class Admin_Shop(Resource): #only by admin. Admin can create a shop
-    @jwt_required()
-    def post(self):
-        user_id = get_jwt_identity()
-        user = Users.query.filter_by(user_id = user_id).first()
-        if user.admin == False:
-            return jsonify({"message":"You have not got permissions"})
-        
         post_parser = RequestParser()#parser on request
         post_parser.add_argument('shop_name', type = str, required = True)
         post_parser.add_argument('shop_address', type = str, required = True)
@@ -281,40 +93,32 @@ class Admin_Shop(Resource): #only by admin. Admin can create a shop
         args = post_parser.parse_args()
         
         args['api_key'] = token_hex(nbytes=64)#Generate api_key for shop
-        shop1 = Shop(**args)
-        db.session.add(shop1)
+        shop = Shop(**args)
+        db.session.add(shop)
         db.session.commit()
         
-        return jsonify({"message":"Create shop {} successful".format(shop1.shop_name), "api-key":"{}".format(args['api_key'])})
-    
-class Admin_Factories(Resource):
-    @jwt_required()
-    def post(self):
-        user_id = get_jwt_identity(ЯЯЯЯЯЯЯЯЯ)
-        user = Users.query.filter_by(user_id = user_id).first()
-        if user.admin == True:
-            return jsonify({"message":"You have not got permissions"})
-        
-        post_parser = RequestParser()
-        post_parser.add_argument('factory_name', type = int, required = True)
-        post_parser.add_argument('product_id', type = int, required = True)
-        args = post_parser.parse_args()
-        
-        args['api_key'] = token_hex(nbytes=64)
-        factory = Factory(**args)
-        db.session.add(factory)
-        db.session.commit()
+        return jsonify({"message":"Create shop {} successful".format(shop.shop_name), "api-key":"{}".format(args['api_key'])})
 
-        return jsonify({"message":"Create factory {} successful".format(factory.factory_name), "api-key":"{}".format(args['api_key'])})
-
-
+@swagger.tags('Shop_Resource')
 class Shop_routes(Resource):
+    '''Restfull class for Shop Resource'''
+
+    @swagger.reorder_with(ShopSHEMA, response_code=200, description='OK')
+    @swagger.reorder_with(ShopSHEMA, response_code=404, description='Shop does not exist')
     def get(self, shop_id: int):
+        '''Get shop'''
+
         return jsonify(to_dict(Shop.query.filter_by(shop_id = shop_id).first_or_404(description='The shop_id {} does not exist '.format(shop_id)),ShopSHEMA))
-
-
+@swagger.tags('Category_Resource')
 class CategorySHOP_routes(Resource):
-    def get(self):
+    '''Restfull class for category shop'''
+
+    @swagger.reorder_with(Category_listSHEMA, response_code=200, description="OK")
+    @swagger.reorder_with(MessageSHEMA, response_code=404, description="Shop does not exists")
+    @swagger.parameter(_in='query', name='shop_id', description = 'Filter by shop_id or give all categories', schema={'type': 'integer'})
+    def get(self):#body parser
+        '''Get category'''
+
         get_parser = RequestParser()
         get_parser.add_argument('shop_id', type = int)
         args = get_parser.parse_args()
@@ -322,21 +126,29 @@ class CategorySHOP_routes(Resource):
         if args['shop_id']:
             shop =  Shop.query.filter_by(shop_id = args['shop_id']).first_or_404(description='The shop_id {} does not exist '.format(args['shop_id']))
             filter_shop = (Shop.shop_id == args['shop_id'])
-        #return class Category, not tuple!!!
+       
+        #return class Category, not tuple!!!  
         result = db.session.query(Category).select_from(TableCategory).join(Shop).join(Category). \
             filter(filter_shop).all()
         
         return jsonify(to_dict(result,Category_listSHEMA, many = True))
 
-    @ApiKey_shop_required
-    def post(self, **kwargs):
+    @swagger.reorder_with(MessageSHEMA, response_code=200, description='OK')
+    @swagger.reorder_with(Category_listSHEMA, response_code=409, description="Category exists in shop")
+    @swagger.reorder_with(Category_listSHEMA, response_code=404, description="Shop does not exists")
+    @swagger.parameter(_in='query', name='shop_id', schema={'type': 'integer'}, required = True)
+    @swagger.parameter(_in='query', name='category_name', description = 'add category to shop', schema={'type': 'string'}, required = True)
+    def post(self):
+        '''Add category to shop'''
+        
         post_parser = RequestParser()
         post_parser.add_argument('category_name', type = str, required = True)
+        post_parser.add_argument('shop_id', type = int)
         args = post_parser.parse_args()
-        shop = kwargs.get('shop')
+        shop = Shop.query.filter_by(shop_id = args['shop_id']).first_or_404(description='The shop_id {} does not exist '.format(args['shop_id']))
         category = shop.categories.filter_by(category_name = args['category_name']).first()
         if category:
-            return jsonify({'message':'This is category is use'})
+            return {'message':'This is category is exists'}, 409
         
         category = Category.query.filter_by(category_name = args['category_name']).first()
         if not category:#Create categories if not exist
@@ -347,27 +159,44 @@ class CategorySHOP_routes(Resource):
                 
         return jsonify({'message':'Сategory {} was added in {}'.format(args['category_name'], shop.shop_name)})
 
-
+@swagger.tags('Product_Resource')
 class Product_routes(Resource):
-    @ApiKey_shop_required
-    def post(self, **kwargs):       
-        post_parser = RequestParser()
+    '''Restfull class for Product Resource'''
+
+    @swagger.reorder_with(MessageSHEMA, response_code=200, description='OK')
+    @swagger.reorder_with(MessageSHEMA, response_code=404, description="Shop or Category does not exists")
+    @swagger.parameter(_in='query', name='product_name', schema={'type': 'string'}, required = True)
+    @swagger.parameter(_in='query', name='product_price', schema={'type': 'integer'}, required = True)
+    @swagger.parameter(_in='query', name='product_description', schema={'type': 'string'}, required = True)
+    @swagger.parameter(_in='query', name='category_id', schema={'type': 'integer'}, required = True)
+    @swagger.parameter(_in='query', name='shop_id', schema={'type': 'integer'}, required = True)
+    def post(self):       
+        '''Add product to shop'''
+
+        post_parser = RequestParser()#parsing body request
         post_parser.add_argument('product_name', type = str, required = True)
         post_parser.add_argument('product_price', type = str, required = True)
         post_parser.add_argument('product_description', type = str, required = True)
         post_parser.add_argument('category_id', type = int, required = True)
+        post_parser.add_argument('shop_id', type = int, required = True)
         args = post_parser.parse_args()
-        shop = kwargs.get('shop')#from api_key
 
+        shop = Shop.query.filter_by(shop_id = args['shop_id']).first_or_404(description='The shop_id {} does not exist '.format(args['shop_id']))
         category = shop.categories.filter_by(category_id = args['category_id']).first_or_404(description='The category_id {} does not exist in shop_id {}'.format(args['category_id'],shop.shop_id))
 
-        product = Product(**args)
-        db.session.add(product)
-        db.session.commit()
+        product = Product(**args)#create product
+        db.session.add(product)#add to database
+        db.session.commit()#commits
 
         return jsonify({"message":"Product {} was added in {}".format(product.product_id, shop.shop_name)})
 
+    @swagger.reorder_with(Product_listSHEMA, response_code=200, description='OK')
+    @swagger.parameter(_in='query', name='shop_id', schema={'type': 'ac'}, required = True)
+    @swagger.parameter(_in='query', name='category_id', schema={'type': 'array[string]'}, required = True)
+    @swagger.parameter(_in='query', name='product_name', schema={'type': 'array[string]'}, required = True)
     def get(self):
+        '''Get product'''
+
         get_parser = RequestParser()
         get_parser.add_argument('shop_id', action='append')
         get_parser.add_argument('category_id', action='append')
@@ -376,100 +205,129 @@ class Product_routes(Resource):
         filter_shop = (None == None)
         filter_category = (None == None)
         filter_product_name = (None == None)
-        if args['shop_id']:
+        if args['shop_id']:#if was in body request
             filter_shop = (Shop.shop_id.in_(args['shop_id']))
-        if args['category_id']:
+        if args['category_id']:#if was in body request
             filter_category = (Category.category_id.in_(args['category_id']))
-        if args['product_name']:
+        if args['product_name']:#if was in body request
             filter_product_name = (Product.product_name == args['product_name'])
         
+        #JOIN SQL
         result = db.session.query(Product.product_name, Product.product_description, Product.product_price, Shop.shop_name, Category.category_name, Category.category_id).join(Shop).join(Category).filter(filter_shop, filter_category, filter_product_name).all()
 
-        return jsonify(tuple_to_dict(result, Product_listSHEMA, many = True))
+        return jsonify(tuple_to_dict(result, Product_listSHEMA, many = True))#convert tuple
 
-    
-    @ApiKey_shop_required
-    def put(self, **kwargs):
+    @swagger.reorder_with(MessageSHEMA, response_code=200, description="OK")
+    @swagger.reorder_with(MessageSHEMA, response_code=404, description="Shop or Category or Product does not exists")
+    @swagger.parameter(_in='query', name='product_name', description="Change product_name", schema={'type': 'string'})
+    @swagger.parameter(_in='query', name='product_price', description = "Change product_price", schema={'type': 'integer'})
+    @swagger.parameter(_in='query', name='product_description', description = "Change product_description", schema={'type': 'string'})
+    @swagger.parameter(_in='query', name='category_id', description = "Change category_id", schema={'type': 'integer'})
+    @swagger.parameter(_in='query', name='product_id', description = "filter product_id", schema={'type': 'integer'}, required = True)
+    @swagger.parameter(_in='query', name='shop_id', description = "filter shop_id", schema={'type': 'integer'}, required = True)
+    def put(self):
+        '''UPDATE product'''
         put_parser = RequestParser()
         put_parser.add_argument('product_id', type = int, required = True)
+        put_parser.add_argument('shop_id', type = int, required = True)
         put_parser.add_argument('product_name', type = str)
         put_parser.add_argument('product_price', type = str)
         put_parser.add_argument('product_description', type = str)
         put_parser.add_argument('category_id', type = int)
         args = put_parser.parse_args()
         
-        shop = kwargs.get('shop')#from api_key
+        shop = Shop.query.filter_by(shop_id = args['shop_id']).first_or_404(description='The shop_id {} does not exist '.format(args['shop_id']))
         product = shop.products.filter_by(product_id = args['product_id']).first_or_404(description='The product_id {} does not exist in {}'.format(args['product_id'], shop.shop_id))
         if args['category_id']:
             category = shop.categories.filter_by(category_id = args['category_id']).first_or_404(description='The category_id {} does not exist in shop_id {}'.format(args['category_id'], shop.shop_id))
+            product.category_id = category.category_id
         if args['product_name']:
-            product.product_name = args['product_name']
+            product.product_name = args['product_name']#change
         if args['product_price']:
-            product.product_price = args['product_price']
+            product.product_price = args['product_price']#change
         if args['product_description']:
-            product.product_description = args['product_description']
+            product.product_description = args['product_description']#change
         
-        db.session.add(product)
-        db.session.commit()
+        db.session.add(product)#add to databasse
+        db.session.commit()#commit
 
         return jsonify({"message":"Product {} was updated".format(args['product_id'])})
        
-
+@swagger.tags('Buy_products')
 class Shop_buy(Resource):
-    @jwt_required()
+    '''Restfull class shop_buy'''
+
+    @swagger.reorder_with(MessageSHEMA, response_code=200, description="OK")
+    @swagger.reorder_with(MessageSHEMA, response_code=404, description="Shop or Products or User does not exists")
+    @swagger.reorder_with(MessageSHEMA, response_code=503, description="Purchase service does not work")
+    @swagger.parameter(_in='query', name='purchase_name', schema={'type': 'string'})
+    @swagger.parameter(_in='query', name='shop_id', schema={'type': 'integer'})
+    @swagger.parameter(_in='query', name='products_id', description = "Change product_description", schema={'type': 'array[integer]'})
+    @swagger.parameter(_in='query', name='payment', description = "Method payment", schema={'type': 'string', 'enum':['Cash', 'Card']})
+    @swagger.parameter(_in='query', name='user_id', schema={'type': 'integer'}, required = True)
     def post(self):
+        '''Buy products'''
+
         post_parser = RequestParser()
-        post_parser.add_argument('shop_id', required = True)
-        post_parser.add_argument('products_id', action = 'append', required = True)#USE LIST
+        post_parser.add_argument('shop_id', type = int, required = True)
+        post_parser.add_argument('products', action = 'append', type = dict, required = True)#USE LIST
         post_parser.add_argument('payment', type=str, choices=['Cash', 'Card'], required = True)
-        post_parser.add_argument('purchase_name', type = str, reuired = True)
+        post_parser.add_argument('purchase_name', type = str)
+        post_parser.add_argument('user_id', type = int, required = True)
         args = post_parser.parse_args()
-        shop = Shop.query.filter_by(shop_id = args['shop_id']).first_or_404(description='The shop_id {} does not exist '.format(args['shop_id']))
-        products_list = shop.products.filter(Product.product_id.in_(args['products_id']), Product.count > 0).all()
+        shop = Shop.query.filter_by(shop_id = args['shop_id']).first_or_404(description='The shop_id {} does not exist '.format(args['shop_id']))#search in database
+        sorted_dict = sorted(args['products'], key=lambda k: k['id'])
+        list_products_id = [x.get('id') for x in sorted_dict]
+        list_products = shop.products.filter(Product.product_id.in_(list_products_id)).all()#check count. id.in -> check with list args
         args['full_price'] = 0
-        args['check_shop'] = shop.check_count
-        args['user_id'] = get_jwt_identity()
-        if not args['purchase_name']: #This purchase_name. If dont specified will be Purchase
-            args['purchase_name'] = 'Purchase'
+        if len(list_products_id) != len(list_products):
+            return {'message':'Invalid request body or product does not exists'}, 404
+       
+        if not args['purchase_name']: #This purchase_name. If dont specified name will be Purchase
+            args['purchase_name'] = 'Purchase'#base name purchase
         
-        shop.check_count += 1
-        purchase = Purchase()
         categories = []
-        for i in range(0,len(args['products_id'])): #handle the products
-            product = products_list[int(args['products_id'][i])-1]
-            args['full_price'] += product.product_price
-            if product.count == 0:#Checking for duplicates
-                return jsonify({'message':'Some products are not available in the shop or one of the products in stock'})
-            
-            product.count -= 1
-            categories.append(product.category_id)#Find out what the purchase category will be
-            purchase_items = Purchase_items()
-            purchase_items.purchase_id = purchase.purchase_id
-            purchase_items.product_id = product.product_id
-            purchase_items.price = product.product_price
-            db.session.add(purchase_items)
-            db.session.add(product)
-        
-        #Automatic category from shop
+        for i in range(0, len(sorted_dict)):
+            if sorted_dict[i].get('count') > list_products[i].count:
+                return {'message':'Wrong count product'}, 400
+           
+            list_products[i].count -= sorted_dict[i].get('count') 
+            args['full_price'] += list_products[i].product_price * sorted_dict[i].get('count')
+            sorted_dict[i]['product_name'] = list_products[i].product_name   
+            sorted_dict[i]['price'] = list_products[i].product_price
+            categories.append(list_products[i].category_id)
+
+        # #Automatic category from shop
         setarr = set(categories)
         if len(categories) == len(setarr):#if the categories are unique. Assign the category different
-            args['category_shop'] = 1 #1 - this category different. Automatic creation
+            args['category_shop'] = 'different' #1 - this category different.
         else:
-            args['category_shop'] = categories[0] #If the categories are not unique. 
+            args['category_shop'] = categories[0].category_name #If the categories are not unique. 
 
-        purchase.add_params(**args)
-        db.session.add(purchase)
+        check = shop.checks.all()
+        print(check)
+        if check == []:
+            args['check_id_shop'] = 1
+        else:
+            args['check_id_shop'] = check[-1].check_id_shop + 1
+
+        print(args['check_id_shop'])    
+
+        args['products'] = sorted_dict
+        
+        try:
+            result = requests.post('http://127.0.0.1:5000/purchase', json = args)
+        except requests.exceptions.ConnectionError:
+            return jsonify({'message':'Purchase service does not work'})
+
+        if result.status_code == 404:
+            return jsonify({'message':'user_id {} does not exists'.format(args['user_id'])}), 503
+
+
+        print(result)
+        check = Check(**result.json())
+
+        db.session.add(check)
         db.session.commit()
 
-        return jsonify({'message':'Congratulations on your purchase {}'.format(purchase.purchase_id)})
-
-        
-class Factory_routes(Resource):
-    def get(self):
-        get_parser = RequestParser()
-        get_parser.add_argument('factory_id', type = int)
-        args = get_parser.parse_args()
-        factory = Factory.query.filter(Factory.factory_id == args['factiry_id']).all()
-        
-        print(factory)
-
+        return result.json()
