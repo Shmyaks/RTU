@@ -53,6 +53,7 @@ class Purchase(db.Model):#This is database Purchase. Purchase User.
     payment = db.Column(db.String(16))
     check_id_shop = db.Column(db.Integer, default = 0)
     category_shop = db.Column(db.String)
+    category_id_shop = db.Column(db.Integer)
     
     def add_params(self, **kwargs):
         self.__init__(**kwargs)
@@ -67,6 +68,7 @@ class Purchase(db.Model):#This is database Purchase. Purchase User.
         self.user_category = kwargs.get('user_category')
         self.category_shop = kwargs.get('category_shop')
         self.payment = kwargs.get('payment')
+        self.category_id_shop = kwargs.get('category_id_shop')
         
     def __repr__(self):
         return '<id_purchase %r>' % self.purchase_id

@@ -56,9 +56,7 @@ class PurchaseSHEMA(Schema):
             'type': 'datetime',
             'format': 'hz'
         },
-        'products': [
-            productSHEMA
-        ],
+        'products': productSHEMA.array(),
         'user_id':{
             'type': 'integer'
         },
@@ -81,13 +79,11 @@ class PurchaseSHEMA(Schema):
             'type': 'string'
         }
     }
-    required = ["purchase_id", "purchase_name", "date_purchase", "user_id"]
-
 
 class Purchase_listSHEMA(Schema):
     type = "object"
     properties = {
-        'purchases': PurchaseSHEMA
+        'purchases': PurchaseSHEMA.array()
     }
 
 
@@ -108,30 +104,10 @@ class UserCategorySHEMA(Schema):
     }
 
 
-class CategorySHEMA(Schema):
-    type = "object"
-    properties = {
-        'category_id': {
-            'type': 'integer',
-            'format': 'int64'
-        },
-        'category_name': {
-            'type': 'string'
-        }
-    }
-
-
-class Category_listSHEMA(Schema):
-    type = "object"
-    properties = {
-        'categories': CategorySHEMA
-    }
-
-
 class UserCategory_listSHEMA(Schema):
     type = "object"
     properties = {
-        'user_categories': CategorySHEMA
+        'user_categories': UserCategorySHEMA.array()
     }
 
 
@@ -154,16 +130,7 @@ class ExamplePurchaseSHEMA(Schema):
             'type': 'string',
             
         },
-        'products': [
-            {
-                'product_name': {
-                    'type':'string'
-                },
-                'price': {
-                    'type': 'integer'
-                }
-            }
-        ],
+        'products': productSHEMA.array(),
         'payment': {
             'type': 'string',
             'format': 'Choises'
@@ -179,3 +146,12 @@ class ExamplePurchaseSHEMA(Schema):
             'type': 'string'
         }
     }
+
+class ExamplelistPurchase(Schema):
+    type = "integer"
+
+class ExampleSETlistPurcase(Schema):
+    type = 'object'
+    properties = {
+        'products_id': ExamplelistPurchase.array()
+    }   

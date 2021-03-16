@@ -20,7 +20,7 @@ db = SQLAlchemy(app)
 SWAGGER_URL = '/api/doc'  # URL for exposing Swagger UI (without trailing '/')
 API_URL = 'swagger.json'  # Our API url (can of course be a local resource)
 
-from req_handler import Create_shop, Shop_routes, CategorySHOP_routes, Product_routes, Shop_buy
+from req_handler import Create_shop, Shop_routes, CategorySHOP_routes, Product_routes, Shop_buy, Checks, Checks_products
 
 migrate = Migrate(app, db)
 manager = Manager(app)
@@ -30,13 +30,15 @@ swagger_blueprint = get_swagger_blueprint(
     api.open_api_json,
     swagger_prefix_url=SWAGGER_URL,
     swagger_url=API_URL,
-    title='Purchase service', version='1', servers=servers)
+    title='Shop service', version='1', servers=servers)
 
 api.add_resource(Create_shop, '/shop/create_shop')
 api.add_resource(Shop_routes, '/shop/<int:shop_id>')
 api.add_resource(CategorySHOP_routes, '/shop/categories')
 api.add_resource(Product_routes, '/shop/products')
 api.add_resource(Shop_buy, '/shop/buy')
+api.add_resource(Checks, '/shop/checks')
+api.add_resource(Checks_products, '/shop/checks/products')
 
 app.register_blueprint(swagger_blueprint)
 

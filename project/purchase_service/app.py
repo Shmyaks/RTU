@@ -13,16 +13,16 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_SORT_KEYS'] = False
 
-servers = [{"url": "http://localhost:5000"}]
+servers = [{"url": "http://localhost:5001"}]
 
 api = Api(app, servers = servers)
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
 
-SWAGGER_URL = '/api/doc'  # URL for exposing Swagger UI (without trailing '/')
+SWAGGER_URL = '/api/doc'  # URL for exposing Swagsger UI (without trailing '/')
 API_URL = 'swagger.json'  # Our API url (can of course be a local resource)
 
-from req_handler import Purchase_routes, User_routes, User_categories_routes, User_registration
+from req_handler import Purchase_routes, User_routes, User_categories_routes, User_registration, Purchase_get_by_shop
 
 migrate = Migrate(app, db)
 manager = Manager(app)
@@ -38,6 +38,7 @@ api.add_resource(Purchase_routes, "/purchase")
 api.add_resource(User_routes, '/user/<int:user_id>')
 api.add_resource(User_categories_routes, '/user/own_categories')
 api.add_resource(User_registration, '/register')
+api.add_resource(Purchase_get_by_shop, "/purchases")
 
 db.create_all()
 

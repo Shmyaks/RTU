@@ -15,7 +15,6 @@ class Shop(db.Model):
     shop_name = db.Column(db.String(64), nullable = True)
     shop_phone = db.Column(db.String(16), nullable = True)
     shop_address = db.Column(db.String(100), nullable = True)
-    api_key = db.Column(db.String(256))
     checks = db.relationship('Check', backref = 'Shop', lazy = 'dynamic')
     categories = db.relationship('Category', secondary=TableCategory, backref='Shops', lazy ='dynamic')
     products = db.relationship('Product', backref = 'Shop', lazy = 'dynamic') 
@@ -24,7 +23,6 @@ class Shop(db.Model):
         self.shop_name = kwargs.get('shop_name')
         self.shop_phone = kwargs.get('shop_phone')
         self.shop_address = kwargs.get('shop_address')
-        # self.api_key = kwargs.get('api_key')#Generate api key
 
     def __repr__(self):
         return '<shop_id %r>' % self.shop_id
@@ -35,12 +33,14 @@ class Check(db.Model):
     purchase_id = db.Column(db.Integer) #This id purchase
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.shop_id'))
     category_id = db.Column(db.Integer, db.ForeignKey('category.category_id'))
+    date_purchase = db.Column(db.DateTime)
 
     def __init__(self, **kwargs):
         self.check_id_shop = kwargs.get('check_id_shop')
         self.purchase_id = kwargs.get('purchase_id')
         self.shop_id = kwargs.get('shop_id')
         self.category_id = kwargs.get('category_id')
+        self.date_purchase = kwargs.get('date_purchase')
 
     def __repr__(self):
         return '<check_id %r>' % self.check_id_database
