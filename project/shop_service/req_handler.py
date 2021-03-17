@@ -1,5 +1,7 @@
 #This is request handler.
+import sys
 from datetime import datetime
+from operator import pos
 from typing import Dict
 from flask_restful_swagger_3 import Resource
 from flask import jsonify
@@ -7,75 +9,12 @@ from flask_restful_swagger_3 import swagger
 import requests
 from flask_restful.reqparse import RequestParser
 from database import Shop, Product, Category, TableCategory, Check
-from models import ShopSHEMA, Product_listSHEMA, Category_listSHEMA, MessageSHEMA, ExampleSearchProduct, PurchaseSHEMA, ExampleSetProduct, Check_listSHEMA, ExampleSETlistChecks #MODELS Dictionary database
 from __main__ import db
+from somefunc import to_dict, tuple_to_dict
+import sys
+sys.path.append('d:\\RTU BACK\\RTU\\project')
+from models import ShopSHEMA, Product_listSHEMA, Category_listSHEMA, MessageSHEMA, ExampleSearchProduct, PurchaseSHEMA, ExampleSetProduct, Check_listSHEMA, ExampleSETlistChecks, ExampleSETlistProduct #MODELS Dictionary database
 
-
-def to_dict(database_object, SHEMA, many = False): #Convert Object to SHEMA in Python dict. If need handle list -> use many = True, but !!USE!! the list schema
-    def convert_to_dict(database_object, SHEMA):
-        dictionary = {}
-        for params in SHEMA.properties:#Compare by database columns
-            list_volume = [x.name for x in database_object.__table__.columns]
-            if params in list_volume:
-                dictionary[params] = getattr(database_object, params)#Adding without order
-            elif type(SHEMA.properties.get(params)) == list:
-                dictionary[params] = getattr(database_object, params).all()
-            else:
-                dictionary[params] = None
-
-            
-        dictionary = {**SHEMA.properties, **dictionary}#Compare and arrange them in the right order
-        print(dictionary)
-        return dictionary
-
-    if many:
-        list_dictionary_converted = []
-        name_list = None# First element dict SHEMA (if use many)
-        for param in SHEMA.properties:
-            name_list = param
-
-        if SHEMA.properties[name_list].get('type') == 'array':#check configuration models .array
-            shema = SHEMA.properties[name_list].get('items')
-        elif SHEMA.properties[name_list]:
-            shema = SHEMA.properties[name_list]
-        print(shema)
-        for i in range(0, len(database_object)):#Handle list
-            list_dictionary_converted.append(convert_to_dict(database_object[i], shema))
-        dictionary = {}
-        dictionary[name_list] = list_dictionary_converted
-        print(dictionary)
-        return dictionary
-
-    return convert_to_dict(database_object, SHEMA)
-
-def tuple_to_dict(tuple_object, SHEMA, many = False):#many = True if need handle list, but !!USE!! the list schema
-
-    #Convert tuple to dict. 
-    #We arrange them according to the principle of 1 in the tuple, 1 in the SHEMA.properties. 2 in tuple, 2 in SHEMA.properties and etc.
-    def convert_to_dict(tuple_object, SHEMA):
-        dictionary = dict(zip(SHEMA.properties, tuple_object))
-        
-        return dictionary
-    
-    if many:
-        list_dictionary_converted = []
-        name_list = None# First element dict SHEMA (if use many)
-        for param in SHEMA.properties:
-            name_list = param
-
-        if SHEMA.properties[name_list]['type']:#check configuration models .array
-            shema = SHEMA.properties[name_list].get('items')
-        elif SHEMA.properties[name_list]:
-            shema = SHEMA.properties[name_list]
-        print(shema)
-        for i in range(0, len(tuple_object)):#Handle list
-            list_dictionary_converted.append(convert_to_dict(tuple_object[i], shema))
-        dictionary = {}
-        dictionary[name_list] = list_dictionary_converted
-        
-        return dictionary
-    
-    return convert_to_dict(tuple_object, SHEMA)
 
 
 @swagger.tags('Create_shop')
@@ -157,9 +96,9 @@ class CategorySHOP_routes(Resource):
             category = Category(**args)
         
         shop.categories.append(category)#If the category is found. Add
-        db.session.commit()
                 
         return jsonify({'message':'Сategory {} was added in {}'.format(args['category_name'], shop.shop_name)})
+
 
 @swagger.tags('Product_Resource')
 class Product_routes(Resource):
@@ -192,31 +131,25 @@ class Product_routes(Resource):
 
         return jsonify({"message":"Product {} was added in {}".format(product.product_id, shop.shop_name)})
 
-    @swagger.reorder_with(Product_listSHEMA, response_code=200, description='OK')
-    @swagger.parameters([{'in': 'query', 'name': 'body', 'description': 'Request body. You can set multiple values for filters (shop_id, category_id).', 'schema': ExampleSearchProduct, 'required': 'true'}])
+    @swagger.reorder_with(Product_listSHEMA, response_code=200, description="OK")
+    @swagger.reorder_with(MessageSHEMA, response_code=404, description="Shop does not exists")
+    @swagger.parameter(_in='query', name='shop_id', description = "Add product to shop", schema={'type': 'integer'}, required = True)
+    @swagger.parameter(_in='query', name = 'products_id', description = 'Filter by products_id', schema = ExampleSETlistProduct)
     def get(self):
-        '''Get product'''
-
         get_parser = RequestParser()
-        get_parser.add_argument('shop_id', action='append', required = True, type = int)
-        get_parser.add_argument('category_id', action='append', required = True, type = int)
-        get_parser.add_argument('product_name', type = str)
+        get_parser.add_argument('shop_id', type = int, required = True)
+        get_parser.add_argument('products_id', action = 'append', type = int)
         args = get_parser.parse_args()
 
-        filter_shop = (None == None)
-        filter_category = (None == None)
-        filter_product_name = (None == None)
-        if args['shop_id']:#if was in body request
-            filter_shop = (Shop.shop_id.in_(args['shop_id']))
-        if args['category_id']:#if was in body request
-            filter_category = (Category.category_id.in_(args['category_id']))
-        if args['product_name']:#if was in body request
-            filter_product_name = (Product.product_name == args['product_name'])
-        
-        #JOIN SQL
-        result = db.session.query(Product.product_name, Product.product_description, Product.product_price, Shop.shop_name, Category.category_name, Category.category_id).join(Shop).join(Category).filter(filter_shop, filter_category, filter_product_name).all()
+        filter_products = (None == None)
+        if args['products_id']:
+            filter_products =  (Product.product_id.in_(args['products_id']))
 
-        return jsonify(tuple_to_dict(result, Product_listSHEMA, many = True))#convert tuple
+        shop = Shop.query.filter(shop_id = args['shop_id']).first_or_404(description='The shop_id {} does not exist '.format(args['shop_id']))
+        products = shop.products.filter(filter_products).all()
+
+        return jsonify(products, Product_listSHEMA, many = True)
+
 
     @swagger.reorder_with(MessageSHEMA, response_code=200, description="OK")
     @swagger.reorder_with(MessageSHEMA, response_code=404, description="Shop or Category or Product does not exists")
@@ -254,7 +187,35 @@ class Product_routes(Resource):
         db.session.commit()#commit
 
         return jsonify({"message":"Product {} was updated".format(args['product_id'])})
-       
+@swagger.tags('Search_product')
+class Shop_product(Resource):
+
+    @swagger.reorder_with(Product_listSHEMA, response_code=200, description='OK')
+    @swagger.parameters([{'in': 'query', 'name': 'body', 'description': 'Search product by name. You can set multiple values for filters (shop_id, category_id).', 'schema': ExampleSearchProduct, 'required': 'true'}])
+    def get(self):
+        '''Get product'''
+
+        get_parser = RequestParser()
+        get_parser.add_argument('shop_id', action='append', required = True, type = int)
+        get_parser.add_argument('category_id', action='append', required = True, type = int)
+        get_parser.add_argument('product_name', type = str)
+        args = get_parser.parse_args()
+
+        filter_shop = (None == None)
+        filter_category = (None == None)
+        filter_product_name = (None == None)
+        if args['shop_id']:#if was in body request
+            filter_shop = (Shop.shop_id.in_(args['shop_id']))
+        if args['category_id']:#if was in body request
+            filter_category = (Category.category_id.in_(args['category_id']))
+        if args['product_name']:#if was in body request
+            filter_product_name = (Product.product_name == args['product_name'])
+        
+        #JOIN SQL
+        result = db.session.query(Product.product_name, Product.product_description, Product.product_price, Shop.shop_name, Category.category_name, Category.category_id).join(Shop).join(Category).filter(filter_shop, filter_category, filter_product_name).all()
+
+        return jsonify(tuple_to_dict(result, Product_listSHEMA, many = True))#convert tuple
+
 @swagger.tags('Buy_products')
 class Shop_buy(Resource):
     '''Restfull class shop_buy'''
@@ -318,7 +279,7 @@ class Shop_buy(Resource):
             args['check_id_shop'] = 1
         else:
             args['check_id_shop'] = check[-1].check_id_shop + 1
-
+        
         print(args['check_id_shop'])    
 
         args['products'] = sorted_dict
@@ -332,9 +293,9 @@ class Shop_buy(Resource):
             return jsonify({'message':'user_id {} does not exists'.format(args['user_id'])}), 503
 
 
-        print(result)
+        print(result.json())
         check = Check(**result.json())
-
+        
         db.session.add(check)
         db.session.commit()
 
@@ -364,6 +325,7 @@ class Checks(Resource):
 class Checks_products(Resource):
     '''Restfull class Checks_Product'''
 
+    @swagger.reorder_with(PurchaseSHEMA, response_code=200, description="OK")
     @swagger.reorder_with(MessageSHEMA, response_code=404, description="Shop does not exist")
     @swagger.parameter(_in='query', name='checks_id', description = "This is routes get purchases. Need only by shop", schema = ExampleSETlistChecks, required=True)
     @swagger.parameter(_in='query', name='shop_id', description = "This is routes get purchases from purchases service", schema = {'type': 'integer'}, required=True)
@@ -385,4 +347,29 @@ class Checks_products(Resource):
         except requests.exceptions.ConnectionError:
             return jsonify({'message':'Purchase service does not work'})
         
-        print(result.json())
+        return result.json()
+
+@swagger.tags('Delivery')
+class Delivery(Resource):
+
+    @swagger.reorder_with(MessageSHEMA, response_code=201, description='OK')
+    @swagger.reorder_with(MessageSHEMA, response_code=404, description="Delivary invalid. Example: shop or product does not exist")
+    @swagger.parameter(_in='query', name='count', description = "Add count to product", schema = {'type': 'integer'}, required=True)
+    @swagger.parameter(_in='query', name='product_id', schema = {'type': 'integer'}, required=True)
+    @swagger.parameter(_in='query', name='shop_id', schema = {'type': 'integer'}, required=True)
+    def post(self):
+
+        post_parser = RequestParser()
+        post_parser.add_argument('product_id', type = int, required = True)
+        post_parser.add_argument('shop_id', type = int, required = True)
+        post_parser.add_argument('count', type = int, required = True)
+        args = post_parser.parse_args()
+
+        shop = Shop.query.filter_by(shop_id = args['shop_id']).first_or_404(description='Delivery invalid '.format(args['shop_id']))#search in database
+        product = shop.products.filter_by(product_id = args['product_id']).first_or_404(description='Delivery invalid '.format(args['shop_id']))#
+
+        product.count += args['count']
+
+        db.session.commit()
+
+        return jsonify({'message': "Delivary success"})

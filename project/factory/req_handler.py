@@ -4,96 +4,47 @@ from flask_restful_swagger_3 import Resource
 from flask import jsonify
 from flask_restful_swagger_3 import swagger
 from flask_restful.reqparse import RequestParser
-from database import Factory
-from __main__ import db
-from models import FactorySHEMA
-from secrets import token_hex  #For generation api_key shop and Factory 
+from database import Factory, Crafting_items
+from __main__ import db, scheduler
+from secrets import  token_hex
+from somefunc import to_dict, check_storage
 
-def to_dict(database_object, SHEMA, many = False): #Convert Object to SHEMA in Python dict. If need handle list -> use many = True, but !!USE!! the list schema
+import sys
+sys.path.append('d:\\RTU BACK\\RTU\\project')
+from models import FactorySHEMA, MessageSHEMA, crafting_list_itemsSHEMA
 
-    def convert_to_dict(database_object, SHEMA):
-        dictionary = {}
-        for column in database_object.__table__.columns:#Compare by database columns
-            if SHEMA.properties.get(column.name):
-                dictionary[column.name] = str(getattr(database_object, column.name))#Adding without order
-            
-        dictionary = {**SHEMA.properties, **dictionary}#Compare and arrange them in the right order
-        print(dictionary)
-        return dictionary
-
-    if many:
-        list_dictionary_converted = []
-        name_list = None# First element dict SHEMA (if use many)
-        for param in SHEMA.properties:
-            name_list = param
-        for i in range(0, len(database_object)):#Handle list
-            list_dictionary_converted.append(convert_to_dict(database_object[i], SHEMA.properties[name_list]))
-        dictionary = {}
-        dictionary[name_list] = list_dictionary_converted
-        return dictionary
-
-    return convert_to_dict(database_object, SHEMA)
-
-def tuple_to_dict(tuple_object, SHEMA, many = False):#many = True if need handle list, but !!USE!! the list schema
-
-    #Convert tuple to dict. 
-    #We arrange them according to the principle of 1 in the tuple, 1 in the SHEMA.properties. 2 in tuple, 2 in SHEMA.properties and etc.
-    def convert_to_dict(tuple_object, SHEMA):
-        print(SHEMA.properties)
-        dictionary = dict(zip(SHEMA.properties, tuple_object))
+@swagger.tags('Factory')
+class Factories_routes(Resource):
         
-        return dictionary
-    
-    if many:
-        list_dictionary_converted = []
-        name_list = None# First element dict SHEMA (if use many)
-        for param in SHEMA.properties:
-            name_list = param
-        for i in range(0, len(tuple_object)):
-            list_dictionary_converted.append(convert_to_dict(tuple_object[i], SHEMA.properties[name_list]))
-        dictionary = {}
-        dictionary[name_list] = list_dictionary_converted
-        
-        return dictionary
-    
-    return convert_to_dict(tuple_object, SHEMA)
-
-
-class Create_Factory(Resource):
-    post_parser = RequestParser()
-    post_parser.add_argument('factory_name', type = str, required = True)
-    post_parser.add_argument('product_id', type = int, required = True)
-    
-    @swagger.tags('Factory_create')
-    @swagger.response(201, description='Create factory')
-    @swagger.reqparser(name = 'Response Factory', parser = post_parser)
+    @swagger.reorder_with(MessageSHEMA, response_code = 200, description='Create factory')
+    @swagger.parameter(_in='query', name='factory_name', schema={'type': 'string'}, required=True)
     def post(self):
-        args = self.post_parser.parse_args()
-        args['api_key'] = token_hex(nbytes=64)
+        post_parser = RequestParser()
+        post_parser.add_argument('factory_name', type = str, required = True)
+        args = post_parser.parse_args()
         factory = Factory(**args)
         
         db.session.add(factory)
         db.session.commit()
 
-        return jsonify({"message":"Create factory {} successful".format(factory.factory_name), "api-key":"{}".format(args['api_key'])})
+        return jsonify({"message":"Create factory {} successful".format(factory.factory_name)})
 
-@swagger.tags('Factory')
-class Factories_routes(Resource):
-    @swagger.reorder_with(FactorySHEMA, response_code = 200, description = "Return factory")
-    @swagger.parameter(_in='query', name='factory_id', description='factory id',schema={'type': 'integer'}, required=True)
-    @swagger.response(response_code=404, description="The factory_id 0 does not exist")
+
+    @swagger.reorder_with(FactorySHEMA, response_code = 200, description = "OK")
+    @swagger.parameter(_in='query', name='factory_id', schema={'type': 'integer'}, required=True)
+    @swagger.reorder_with(MessageSHEMA, response_code=404, description="The factory_id 0 does not exist")
     def get(self):
         post_parser = RequestParser()
-        post_parser.add_argument('factory_id', type = int, required = True)
+        post_parser.add_argument('factory_id', type = int)
         args = post_parser.parse_args()
         factory = Factory.query.filter_by(factory_id = args['factory_id']).first_or_404(description='The factory_id {} does not exist '.format(args['factory_id']))
         
         return jsonify(to_dict(factory, FactorySHEMA))
     
-    @swagger.response(response_code=201, description="Return up")#This auto swagger.
+    @swagger.reorder_with(MessageSHEMA, response_code=201, description="OK")
     @swagger.parameter(_in='query', name='factory_id', schema={'type': 'integer'}, required=True)
     @swagger.parameter(_in='query', name='factory_name', schema={'type': 'string'}, required=True)
-    @swagger.response(response_code=404, description="The factory_id 0 does not exist")
+    @swagger.reorder_with(MessageSHEMA, response_code=404, description="The factory_id 0 does not exist")
     def put(self):       
         post_parser = RequestParser()
         post_parser.add_argument('factory_id', type = int, required = True)
@@ -108,6 +59,118 @@ class Factories_routes(Resource):
 
         return jsonify({'message':'factory {}  was updated'.format(factory.factory_id)})
 
-    # def delete(self):
-    #     delete_parser = RequestParser()
-    #     delete_parser.add_argument('factory_id')
+    @swagger.reorder_with(MessageSHEMA, response_code = 200, description = "OK. !!!Delete with scheduler!!!")
+    @swagger.parameter(_in='query', name='factory_id', schema={'type': 'integer'}, required=True)
+    @swagger.reorder_with(MessageSHEMA, response_code=404, description="The factory does not exist")
+    def delete(self):
+        delete_parser = RequestParser()
+        delete_parser.add_argument('factory_id')
+        args = delete_parser.parse_args()
+
+        factory = Factory.query.filter_by(factory_id = args['factory_id']).first_or_404(description='The factory_id {} does not exist '.format(args['factory_id'])) 
+
+        crafts = factory.crafting_items.all()
+        for craft in crafts:
+            scheduler.remove_job(job_id = craft.scheduler_id)
+
+        db.session.commit()
+
+        return jsonify({'message': 'Factory {} was deleted'.format(args['factory_id'])})  
+
+@swagger.tags('Factory craft')
+class Craft(Resource): 
+    '''Restfull class for Factory craft'''    
+
+    @swagger.reorder_with(MessageSHEMA, response_code=200, description="OK")
+    @swagger.reorder_with(MessageSHEMA, response_code=404, description="The factory does not exist")
+    @swagger.reorder_with(MessageSHEMA, response_code=409, description="The factory does not exist")
+    @swagger.parameter(_in='query', name='interval_delivery', description = "This interval in seconds. Please set SECONDS.", schema={'type': 'integer'}, required=True)
+    @swagger.parameter(_in='query', name='craft_count', schema={'type': 'integer'}, required=True)
+    @swagger.parameter(_in='query', name='shop_id', schema={'type': 'integer'}, required=True)
+    @swagger.parameter(_in='query', name='product_id', schema={'type': 'integer'}, required=True)
+    @swagger.parameter(_in='query', name='factory_id', schema={'type': 'integer'}, required=True)
+    def post(self):
+        '''This add craft product'''
+
+        post_parser = RequestParser()
+        post_parser.add_argument('factory_id', type = int, required = True)
+        post_parser.add_argument('product_id', type = int, required = True)
+        post_parser.add_argument('shop_id', type = int, required = True)
+        post_parser.add_argument('craft_count', type = int, required = True)
+        post_parser.add_argument('interval_delivery', type = int, required = True)
+        args = post_parser.parse_args()
+
+        factory = Factory.query.filter_by(factory_id = args['factory_id']).first_or_404(description='The factory_id {} does not exist '.format(args['factory_id'])) 
+        storage = factory.crafting_items.filter_by(product_id = args['product_id']).first()
+        print(storage)
+        if storage:
+            return {'message': 'Product is crafting in factory {}'.format(factory.factory_id)}, 409
+        
+        args['scheduler_id'] = token_hex(nbytes=16)
+
+        craft = Crafting_items(**args)
+        
+        db.session.add(craft)
+        db.session.commit()
+
+        scheduler.add_job(check_storage, 'interval', seconds = args['interval_delivery'], id=args['scheduler_id'], args=[args['factory_id'], args['product_id']])
+
+        return jsonify({'message': 'Success craft was add to factory {}'.format(factory.factory_id)})
+
+    @swagger.reorder_with(crafting_list_itemsSHEMA, response_code=200, description="OK")
+    @swagger.reorder_with(MessageSHEMA, response_code=404, description="The factory does not exist")
+    @swagger.parameter(_in='query', name='factory_id', schema={'type': 'integer'}, required=True)
+    def get(self):
+        '''Get crafts products by factory_id'''
+
+        get_parser = RequestParser()
+        get_parser.add_argument('factory_id', type = int, required = True)
+        args = get_parser.parse_args()
+
+        factory = Factory.query.filter_by(factory_id = args['factory_id']).first_or_404(description='The factory_id {} does not exist '.format(args['factory_id'])) 
+
+        return jsonify(to_dict(factory.crafting_items.all(), crafting_list_itemsSHEMA, many = True))
+
+    @swagger.reorder_with(MessageSHEMA, response_code=200, description="OK")
+    @swagger.reorder_with(MessageSHEMA, response_code=404, description="The factory pr craft does not exist")
+    @swagger.parameter(_in='query', name='interval_delivery', schema={'type': 'integer'})
+    @swagger.parameter(_in='query', name='shop_id', schema={'type': 'integer'})
+    @swagger.parameter(_in='query', name='product_id', schema={'type': 'integer'})
+    @swagger.parameter(_in='query', name='craft_id', schema={'type': 'integer'}, required=True)
+    @swagger.parameter(_in='query', name='factory_id', description = "Filter by factory_id", schema={'type': 'integer'}, required=True)
+    def put(self):
+
+        put_parser = RequestParser()
+        put_parser.add_argument('factory_id', type = int, required = True)
+        put_parser.add_argument('craft_id', type = int, required = True)
+        put_parser.add_argument('product_id', type = int)        
+        put_parser.add_argument('shop_id', type = int)
+        put_parser.add_argument('interval_delivery', type = int)
+        args = put_parser.parse_args()
+
+        factory = Factory.query.filter_by(factory_id = args['factory_id']).first_or_404(description='The factory_id {} does not exist '.format(args['factory_id']))   
+        craft = factory.crafting_items.filter_by(craft_id = args['craft_id']).first_or_404(description='The factory_id {} does not exist '.format(args['factory_id']))
+
+        if args['product_id']:
+            craft.product_id = args['product_id']
+        else:
+            args['product_id'] = craft.product_id
+        
+        if args['shop_id']:  
+            craft.shop_id = args['shop_id']
+        else:
+            args['shop_id'] = craft.shop_id
+
+        if args['interval_delivery']:      
+            craft.interval_delivery = args['interval_delivery']  
+        else:
+            args['interval_delivary'] = craft.interval_delivery
+
+        args['scheduler_id'] = token_hex(nbytes=16)
+        scheduler.remove_job(job_id = craft.scheduler_id)
+        craft.scheduler_id = args['scheduler_id']
+        scheduler.add_job(check_storage, 'interval', seconds = args['interval_delivery'], id=args['scheduler_id'], args=[args['factory_id'], args['product_id']])
+
+        db.session.commit()
+
+        return jsonify({'message': 'craft {} was updated'.format(craft.craft_id)})    

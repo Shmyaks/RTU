@@ -12,12 +12,8 @@ class Users(db.Model):#This is database Users
     login = db.Column(db.String(32), nullable = True)
     password = db.Column(db.String())
     date_registration = db.Column(db.DateTime, default = datetime.utcnow)
-    admin = db.Column(db.Boolean, default = False)#Big father. For safety
     purchases = db.relationship('Purchase', backref = 'User', lazy='dynamic')
     user_categories = db.relationship('User_category', backref = 'User', lazy = 'dynamic')
-
-    def check_password(self, password: str):#This is method check password 
-        return check_password_hash(self.password, password)
 
     def __init__(self, **kwargs):#Add to database
         self.id = kwargs.get('id')
@@ -32,7 +28,7 @@ class Users(db.Model):#This is database Users
 
 class Purchase_items(db.Model):#items purchase
     item_id = db.Column(db.Integer, primary_key = True)
-    purchase_id = db.Column(db.Integer, db.ForeignKey('purchase.purchase_id'))
+    purchase_id = db.Column(db.Integer, db.ForeignKey('purchase.purchase_id'), nullable = True)
     product_name = db.Column(db.String(32))
     price = db.Column(db.Integer, nullable = True)
 
@@ -53,6 +49,7 @@ class Purchase(db.Model):#This is database Purchase. Purchase User.
     payment = db.Column(db.String(16))
     check_id_shop = db.Column(db.Integer, default = 0)
     category_shop = db.Column(db.String)
+    shop_id = db.Column(db.Integer)
     category_id_shop = db.Column(db.Integer)
     
     def add_params(self, **kwargs):
@@ -69,6 +66,7 @@ class Purchase(db.Model):#This is database Purchase. Purchase User.
         self.category_shop = kwargs.get('category_shop')
         self.payment = kwargs.get('payment')
         self.category_id_shop = kwargs.get('category_id_shop')
+        self.shop_id = kwargs.get('shop_id')
         
     def __repr__(self):
         return '<id_purchase %r>' % self.purchase_id

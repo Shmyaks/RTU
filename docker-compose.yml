@@ -10,9 +10,9 @@ services:
     volumes: 
       - ./project/purchase_service/migrations:/usr/src/app/migrations
       - ./entrypoint.sh:/usr/src/app/entrypoint.sh
+      - ./project/models.py:/usr/src/models.py
     environment:
       - DATABASE_URL=postgres+psycopg2://admin:123456@db_purchase:5432/database
-    entrypoint: ["sh", "./entrypoint.sh"]
   shop_service:
     build: ./project/shop_service
     restart: always
@@ -23,9 +23,9 @@ services:
     volumes: 
       - ./project/shop_service/migrations:/usr/src/app/migrations
       - ./entrypoint.sh:/usr/src/app/entrypoint.sh
+      - ./project/models.py:/usr/src/models.py
     environment:
       - DATABASE_URL=postgres+psycopg2://admin:123456@db_shop:5432/database
-    entrypoint: ["sh", "./entrypoint.sh"]
   factory:
     build: ./project/factory
     restart: always
@@ -36,9 +36,9 @@ services:
     volumes: 
       - ./project/factory/migrations:/usr/src/app/migration
       - ./entrypoint.sh:/usr/src/app/entrypoint.sh
+      - ./project/models.py:/usr/src/models.py
     environment:
       - DATABASE_URL=postgres+psycopg2://admin:123456@db_factory:5432/database
-    entrypoint: ["sh", "./entrypoint.sh"]
   db_purchase:
     image: postgres:13.2-alpine
     restart: always

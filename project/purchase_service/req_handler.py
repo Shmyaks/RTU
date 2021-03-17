@@ -1,5 +1,4 @@
 """Request handler purchase_service."""
-
 from datetime import datetime
 from typing import get_args
 from flask_restful_swagger_3 import Resource
@@ -7,69 +6,12 @@ from flask import jsonify
 from flask_restful_swagger_3 import swagger
 from flask_restful.reqparse import RequestParser
 from database import  Users, User_category, Purchase, Purchase_items
-from models import UsersSHEMA, PurchaseSHEMA, Purchase_listSHEMA, UserCategory_listSHEMA, MessageSHEMA, ExampleSETlistPurcase#MODELS Dictionary database
 from __main__ import db
 
-def to_dict(database_object, SHEMA, many = False): #Convert Object to SHEMA in Python dict. If need handle list -> use many = True, but !!USE!! the list schema
-    def convert_to_dict(database_object, SHEMA):
-        dictionary = {}
-        for params in SHEMA.properties:#Compare by database columns
-            list_volume = [x.name for x in database_object.__table__.columns]
-            if params in list_volume:
-                dictionary[params] = getattr(database_object, params)#Adding without order
-            elif type(SHEMA.properties.get(params)) == list:
-                dictionary[params] = getattr(database_object, params).all()
-            else:
-                dictionary[params] = None
-
-            
-        dictionary = {**SHEMA.properties, **dictionary}#Compare and arrange them in the right order
-        print(dictionary)
-        return dictionary
-
-    if many:
-        list_dictionary_converted = []
-        name_list = None# First element dict SHEMA (if use many)
-        for param in SHEMA.properties:
-            name_list = param
-
-        if SHEMA.properties[name_list].get('type') == 'array':#check configuration models .array
-            shema = SHEMA.properties[name_list].get('items')
-        elif SHEMA.properties[name_list]:
-            shema = SHEMA.properties[name_list]
-        print(shema)
-        for i in range(0, len(database_object)):#Handle list
-            list_dictionary_converted.append(convert_to_dict(database_object[i], shema))
-        dictionary = {}
-        dictionary[name_list] = list_dictionary_converted
-        print(dictionary)
-        return dictionary
-
-    return convert_to_dict(database_object, SHEMA)
-
-def tuple_to_dict(tuple_object, SHEMA, many = False):#many = True if need handle list, but !!USE!! the list schema
-
-    #Convert tuple to dict. 
-    #We arrange them according to the principle of 1 in the tuple, 1 in the SHEMA.properties. 2 in tuple, 2 in SHEMA.properties and etc.
-    def convert_to_dict(tuple_object, SHEMA):
-        print(SHEMA.properties)
-        dictionary = dict(zip(SHEMA.properties, tuple_object))
-        
-        return dictionary
-    
-    if many:
-        list_dictionary_converted = []
-        name_list = None# First element dict SHEMA (if use many)
-        for param in SHEMA.properties:
-            name_list = param
-        for i in range(0, len(tuple_object)):
-            list_dictionary_converted.append(convert_to_dict(tuple_object[i], SHEMA.properties[name_list]))
-        dictionary = {}
-        dictionary[name_list] = list_dictionary_converted
-        
-        return dictionary
-    
-    return convert_to_dict(tuple_object, SHEMA)
+import sys
+sys.path.append('d:\\RTU BACK\\RTU\\project')
+from somefunc import to_dict
+from models import UsersSHEMA, PurchaseSHEMA, Purchase_listSHEMA, UserCategory_listSHEMA, MessageSHEMA, ExampleSETlistPurcase#MODELS Dictionary database
 
 @swagger.tags('Purchase_routes')
 class Purchase_routes(Resource):
@@ -89,18 +31,20 @@ class Purchase_routes(Resource):
         get_parser.add_argument('user_id', type = int, required = True)
         get_parser.add_argument('check_id_shop', type = int, required = True)
         get_parser.add_argument('full_price', type = int, required = True)
+        get_parser.add_argument('category_id_shop', type = int, required = True)
         get_parser.add_argument('category_shop', type = str, required = True)
         args = get_parser.parse_args()        
 
         Users.query.filter_by(user_id = args['user_id']).first_or_404(description='The user_id {} does not exist '.format(args['user_id']))
 
-        purchase = Purchase(**args)#Create purchase
+        purchase = Purchase(**args)#Create purchasp
+        db.session.add(purchase)
+        db.session.commit()
         for i in range(0,len(args['products'])): #handle the products
-            purchase_items = Purchase_items(**args['products'][i])#create
-            purchase_items.purchase_id = purchase.purchase_id
-            db.session.add(purchase_items)#add purchase_items
+            purchase_item = Purchase_items(**args['products'][i], purchase_id = purchase.purchase_id)#create
+            db.session.add(purchase_item)#add purchase_items
+        #add purchase to database
         
-        db.session.add(purchase)#add purchase to database
         db.session.commit()#commit
 
         return jsonify(to_dict(purchase, PurchaseSHEMA))
@@ -140,8 +84,8 @@ class Purchase_routes(Resource):
 
     @swagger.reorder_with(MessageSHEMA, response_code=200,description='OK')
     @swagger.reorder_with(MessageSHEMA, response_code=404,description='User, Purchase, user_category_id does not exists')
-    @swagger.parameter(_in='query', name='user_category_id', schema={'type': 'integer'}, required=True)
-    @swagger.parameter(_in='query', name='payment', schema={'type': 'string', 'enum':['Cash', 'Card']}, required=True)
+    @swagger.parameter(_in='query', name='user_category_id', schema={'type': 'integer'})
+    @swagger.parameter(_in='query', name='payment', schema={'type': 'string', 'enum':['Cash', 'Card']})
     @swagger.parameter(_in='query', name='user_id', schema={'type': 'integer'}, required=True)
     @swagger.parameter(_in='query', name='purchase_id', schema={'type': 'integer'}, required=True)
     def put(self):
@@ -181,7 +125,6 @@ class Purchase_get_by_shop(Resource):
         get_parser = RequestParser()
         get_parser.add_argument('purchases_id', action = 'append', type = int, required = True)
         args = get_parser.parse_args()
-        print(args['purchases_id'])
 
         purchase_list = Purchase.query.filter(Purchase.purchase_id.in_(args['purchases_id'])).all()
 

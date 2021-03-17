@@ -1,7 +1,7 @@
 #
 #  SQLALCHEMY database
 #
-from sqlalchemy.orm import backref
+from datetime import datetime
 from __main__ import db
 
     
@@ -32,15 +32,14 @@ class Check(db.Model):
     check_id_shop = db.Column(db.Integer) #This check id shop
     purchase_id = db.Column(db.Integer) #This id purchase
     shop_id = db.Column(db.Integer, db.ForeignKey('shop.shop_id'))
-    category_id = db.Column(db.Integer, db.ForeignKey('category.category_id'))
-    date_purchase = db.Column(db.DateTime)
+    category_id_shop = db.Column(db.Integer, db.ForeignKey('category.category_id'))
+    date_purchase = db.Column(db.DateTime, default = datetime.utcnow)
 
     def __init__(self, **kwargs):
         self.check_id_shop = kwargs.get('check_id_shop')
         self.purchase_id = kwargs.get('purchase_id')
         self.shop_id = kwargs.get('shop_id')
-        self.category_id = kwargs.get('category_id')
-        self.date_purchase = kwargs.get('date_purchase')
+        self.category_id_shop = kwargs.get('category_id_shop')
 
     def __repr__(self):
         return '<check_id %r>' % self.check_id_database
