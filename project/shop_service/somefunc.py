@@ -1,3 +1,5 @@
+from database import Category
+
 def to_dict(database_object, SHEMA, many = False): #Convert Object to SHEMA in Python dict. If need handle list -> use many = True, but !!USE!! the list schema
     def convert_to_dict(database_object, SHEMA):
         dictionary = {}
@@ -65,3 +67,4 @@ def tuple_to_dict(tuple_object, SHEMA, many = False):#many = True if need handle
         return dictionary
     
     return convert_to_dict(tuple_object, SHEMA)
+

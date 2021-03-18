@@ -7,9 +7,8 @@ from flask_migrate import MigrateCommand, Migrate
 import os
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database/database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JSON_SORT_KEYS'] = False
 
 servers = [{"url": "http://localhost:80"}]
 
@@ -33,7 +32,7 @@ with app.app_context():
         api.open_api_json,
         swagger_prefix_url=SWAGGER_URL,
         swagger_url=API_URL,
-        title='Factory service', version='1', servers=servers)
+        title='Purchase service', version='1', servers=servers)
 
 api.add_resource(Purchase_routes, "/api/purchase")
 api.add_resource(User_routes, '/api/user/<int:user_id>')
@@ -42,9 +41,8 @@ api.add_resource(User_registration, '/api/user/register')
 api.add_resource(Purchase_get_by_shop, "/api/purchases")
 
 app.register_blueprint(swagger_blueprint,  url_prefix=swagger_blueprint_url_prefix)
-db.create_all()
 
 if __name__ == '__main__':
     manager.run()
-    app.run(host='0.0.0.0', debug=True, port=5000)
+    app.run(host='0.0.0.0', debug=False, port=5000)
 

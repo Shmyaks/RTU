@@ -9,3 +9,4 @@ COPY . /usr/src/app
 RUN pip install --no-cache-dir -r requirements.txt
 
 CMD bash -c "python app.py db upgrade & python app.py runserver -p 5000 -h 0.0.0.0"
+

@@ -9,8 +9,6 @@ from __main__ import db
 from somefunc import to_dict, tuple_to_dict
 from models import ShopSHEMA, Product_listSHEMA, Category_listSHEMA, MessageSHEMA, ExampleSearchProduct, PurchaseSHEMA, ExampleSetProduct, Check_listSHEMA, ExampleSETlistChecks, ExampleSETlistProduct #MODELS Dictionary database
 
-
-
 @swagger.tags('Create_shop')
 class Create_shop(Resource): #only by admin. Admin can create a shop
     '''Restful class for create_shop'''
@@ -233,14 +231,11 @@ class Shop_buy(Resource):
         post_parser.add_argument('purchase_name', type = str)
         post_parser.add_argument('user_id', type = int, required = True)
         args = post_parser.parse_args()
-        print(args['products'])
 
         shop = Shop.query.filter_by(shop_id = args['shop_id']).first_or_404(description='The shop_id {} does not exist '.format(args['shop_id']))#search in database
         sorted_dict = sorted(args['products'], key=lambda k: k['id'])
         list_products_id = [x.get('id') for x in sorted_dict]#For search in database
-        print(list_products_id)
         list_products = shop.products.filter(Product.product_id.in_(list_products_id)).all()#Search
-        print(list_products)
         args['full_price'] = 0
         if len(list_products_id) != len(list_products):#If body invalid. OR if have similar args
             return {'message':'Invalid request body or product does not exists'}, 404
@@ -269,13 +264,11 @@ class Shop_buy(Resource):
             args['category_shop'] = categories[0].category_name #If the categories are not unique. 
 
         check = shop.checks.all()
-        print(check)
         if check == []:
             args['check_id_shop'] = 1
         else:
             args['check_id_shop'] = check[-1].check_id_shop + 1
         
-        print(args['check_id_shop'])    
 
         args['products'] = sorted_dict
         
@@ -288,7 +281,6 @@ class Shop_buy(Resource):
             return jsonify({'message':'user_id {} does not exists'.format(args['user_id'])}), 503
 
 
-        print(result.json())
         check = Check(**result.json())
         
         db.session.add(check)
@@ -336,7 +328,6 @@ class Checks_products(Resource):
         checks = shop.checks.filter(Shop.shop_id.in_(args['checks_id'])).all()
         args['purchases_id'] = [x.purchase_id for x in checks]
 
-        print(args)
         try:
             result = requests.get('http://127.0.0.1:80/api/purchases', json = args)
         except requests.exceptions.ConnectionError:

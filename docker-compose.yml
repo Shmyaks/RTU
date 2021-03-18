@@ -1,68 +1,32 @@
 version: "3.9"
 services:
   purchase_service:
+    image: shmyaks/purchase
     build: ./project/purchase_service
     restart: always
     ports:
       - 5000:5000
-    depends_on:
-      - db_purchase
     volumes: 
       - ./project/purchase_service/migrations/:/usr/src/app/migrations/
-      - ./entrypoint.sh:/usr/src/app/entrypoint.sh
-    environment:
-      - DATABASE_URL=postgresql+psycopg2://admin:123456@db_purchase:5432/database
+      - ./project/purchase_service/database/:/usr/src/app/database/
   shop_service:
+    image: shmyaks/shop
     build: ./project/shop_service
     restart: always
     ports: 
       - 5001:5001
-    depends_on:
-      - db_shop
     volumes: 
       - ./project/shop_service/migrations/:/usr/src/app/migrations/
-      - ./entrypoint.sh:/usr/src/app/entrypoint.sh
-    environment:
-      - DATABASE_URL=postgresql+psycopg2://admin:123456@db_shop:5432/database
+      - ./project/shop_service/database/:/usr/src/app/database/
   factory:
+    image: shmyaks/factory
     build: ./project/factory
     restart: always
     ports: 
       - 5002:5002
-    depends_on:
-      - db_factory
     volumes: 
       - ./project/factory/migrations/:/usr/src/app/migrations/
-      - ./entrypoint.sh:/usr/src/app/entrypoint.sh
-    environment:
-      - DATABASE_URL=postgresql+psycopg2://admin:123456@db_factory:5432/database
-  db_purchase:
-    image: postgres:13.2-alpine
-    restart: always
-    environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=123456
-      - POSTGRES_DB=database
-    volumes: 
-      - pgpurchase:/var/lib/postgresql/data
-  db_shop:
-    image: postgres:13.2-alpine
-    restart: always
-    environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=123456
-      - POSTGRES_DB=database
-    volumes: 
-      - pgshop:/var/lib/postgresql/data
-  db_factory:
-    image: postgres:13.2-alpine
-    restart: always
-    environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=123456
-      - POSTGRES_DB=database
-    volumes: 
-      - pgfactory:/var/lib/postgresql/data
+      - ./project/factory/database/:/usr/src/app/database/
   nginx:
     image: nginx:alpine
     volumes:
@@ -73,7 +37,3 @@ services:
     - factory
     - purchase_service
     - shop_service
-volumes: 
-  pgshop:
-  pgpurchase:
-  pgfactory:

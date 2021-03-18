@@ -25,7 +25,6 @@ class Factories_routes(Resource):
 
         return jsonify({"message":"Create factory {} successful".format(factory.factory_name)})
 
-
     @swagger.reorder_with(FactorySHEMA, response_code = 200, description = "OK")
     @swagger.parameter(_in='query', name='factory_id', schema={'type': 'integer'}, required=True)
     @swagger.reorder_with(MessageSHEMA, response_code=404, description="The factory_id 0 does not exist")
@@ -98,7 +97,6 @@ class Craft(Resource):
 
         factory = Factory.query.filter_by(factory_id = args['factory_id']).first_or_404(description='The factory_id {} does not exist '.format(args['factory_id'])) 
         storage = factory.crafts.filter_by(product_id = args['product_id']).first()
-        print(storage)
         if storage:
             return {'message': 'Product is crafting in factory {}'.format(factory.factory_id)}, 409
         

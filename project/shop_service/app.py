@@ -9,9 +9,8 @@ import os
 
 servers = [{"url": "http://localhost:80"}]
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database/database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JSON_SORT_KEYS'] = False
 
 api = Api(app)
 db = SQLAlchemy(app)
@@ -47,9 +46,8 @@ api.add_resource(Delivery, '/api/shop/delivery')
 
 app.register_blueprint(swagger_blueprint,  url_prefix=swagger_blueprint_url_prefix)
 
-db.create_all()
-
 if __name__ == '__main__':
+
     manager.run()
     app.run(host='0.0.0.0', port=5001)
 

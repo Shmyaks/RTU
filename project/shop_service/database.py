@@ -50,13 +50,13 @@ class Category(db.Model):
     products = db.relationship('Product', backref = 'Category', lazy = 'dynamic')
     checks = db.relationship('Check', backref = 'Category', lazy = 'dynamic')
 
+        
     def __init__(self, **kwargs):
         self.category_name = kwargs.get('category_name')
 
     def __repr__(self):
         return '<category_id %r>' % self.category_id
-
-
+    
 class Product(db.Model):
     product_id = db.Column(db.Integer, primary_key = True)
     product_name = db.Column(db.String(32), nullable = True)

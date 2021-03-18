@@ -222,8 +222,7 @@ class PurchaseSHEMA(Schema):
             'type': 'integer'
         },
         'date_purchase':{
-            'type': 'datetime',
-            'format': 'hz'
+            'type': 'date-time'
         },
         'products': productSMALLSHEMA.array(),
         'user_id':{
@@ -234,7 +233,7 @@ class PurchaseSHEMA(Schema):
             'format': 'int64'
         },
         'payment': {
-            'type': 'String',
+            'type': 'string',
             'format': 'Choises'
         },
         'check_id_shop': {
@@ -402,10 +401,10 @@ class ExamplePurchaseSHEMA(Schema):
 class ExamplelistPurchase(Schema):
     type = "integer"
 
-class ExampleSETlistPurcase(Schema):
+class ExampleSETlistPurchase(Schema):
     type = 'object'
     properties = {
-        'products_id': ExamplelistPurchase.array()
+        'purchases_id': ExamplelistPurchase.array()
     }   
 
 
@@ -416,3 +415,46 @@ class MessageSHEMA(Schema):
             'type': 'string'
         }
     }    
+
+
+class Body_PurchaseSHEMA(Schema):
+    type = "object"
+    properties = {
+        'purchase_name': {
+            'type': 'string'
+        },
+        'full_price': {
+            'type': 'integer'
+        },
+        'date_purchase':{
+            'type': 'date-time'
+        },
+        'products': productSMALLSHEMA.array(),
+        'user_id':{
+            'type': 'integer'
+        },
+        'user_category': {
+            'type': 'integer',
+            'format': 'int64'
+        },
+        'payment': {
+            'type': 'string',
+            'format': 'Choises'
+        },
+        'check_id_shop': {
+            'type': 'integer'
+        },
+        'category_shop': {
+            'type': 'string'
+        },
+        'category_id_shop': {
+            'type': 'integer',
+            'format': 'int64'
+        },
+        'shop_id': {
+            'type': 'integer',
+            'format': 'int64'
+        }
+    }
+
+    required = [x for x in properties]

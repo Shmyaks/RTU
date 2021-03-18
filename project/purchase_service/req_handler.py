@@ -6,7 +6,7 @@ from flask_restful.reqparse import RequestParser
 from database import  Users, User_category, Purchase, Purchase_items
 from __main__ import db
 from somefunc import to_dict
-from models import UsersSHEMA, PurchaseSHEMA, Purchase_listSHEMA, UserCategory_listSHEMA, MessageSHEMA, ExampleSETlistPurcase#MODELS Dictionary database
+from models import UsersSHEMA, PurchaseSHEMA, Purchase_listSHEMA, UserCategory_listSHEMA, MessageSHEMA, ExampleSETlistPurchase, Body_PurchaseSHEMA#MODELS Dictionary database
 
 @swagger.tags('Purchase_routes')
 class Purchase_routes(Resource):
@@ -14,7 +14,7 @@ class Purchase_routes(Resource):
     
     @swagger.reorder_with(PurchaseSHEMA, response_code=201,description='OK')
     @swagger.reorder_with(MessageSHEMA, response_code=404,description='User does not exist')
-    @swagger.parameters([{'in': 'query', 'name': 'body', 'description': 'Request body', 'schema': PurchaseSHEMA, 'required': 'true'}])
+    @swagger.parameters([{'in': 'query', 'name': 'body', 'description': 'Request body', 'schema': Body_PurchaseSHEMA, 'required': 'true'}])
     def post(self):
         """This request need only by Shop."""
 
@@ -113,7 +113,7 @@ class Purchase_get_by_shop(Resource):
     '''Restfull class for get purchase. Only by shop'''
     
     @swagger.reorder_with(Purchase_listSHEMA, response_code=200, description='OK')
-    @swagger.parameter(_in='query', name='purchases_id', description = "This is routes get purchases. Need only by shop", schema = ExampleSETlistPurcase, required=True)
+    @swagger.parameter(_in='query', name='Body', description = "This is routes get purchases. Need only by shop", schema = ExampleSETlistPurchase, required=True)
     def get(self):
         '''Get purchase'''
         

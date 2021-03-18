@@ -4,7 +4,6 @@ from database import Factory
 def check_storage(factory_id, product_id):
     factory = Factory.query.filter_by(factory_id = factory_id).first()
     storage = factory.crafting_items.filter_by(product_id = product_id).first()
-    print(storage)
     send_count = storage.craft_count + storage.product_storage#If items is storage add to delivary
 
     body = {}
@@ -16,8 +15,6 @@ def check_storage(factory_id, product_id):
         result = requests.post('http://127.0.0.1:80/api/shop/delivery', json = body)
     except requests.exceptions.ConnectionError:
         storage.product_storage += storage.craft_count #if connect error add to storage
-
-    print('Success delivary {} factory {} to shop {}'.format(product_id, factory_id, body['shop_id']))     
 
 def to_dict(database_object, SHEMA, many = False): #Convert Object to SHEMA in Python dict. If need handle list -> use many = True, but !!USE!! the list schema
     def convert_to_dict(database_object, SHEMA):
@@ -77,7 +74,6 @@ def tuple_to_dict(tuple_object, SHEMA, many = False):#many = True if need handle
             shema = SHEMA.properties[name_list].get('items')
         elif SHEMA.properties[name_list]:
             shema = SHEMA.properties[name_list]
-        print(shema)
         for i in range(0, len(tuple_object)):#Handle list
             list_dictionary_converted.append(convert_to_dict(tuple_object[i], shema))
         dictionary = {}
