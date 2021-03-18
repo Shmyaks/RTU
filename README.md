@@ -1,7 +1,7 @@
 "Дерево сервисов"
 # Запуск
 * docker-compose pull
-* docker-compose update
+* docker-compose up
 # Технологии
 * Sqlalchemy https://flask-sqlalchemy.palletsprojects.com
 * Restfull api https://flask-restful.readthedocs.io/en/latest/
