@@ -1,6 +1,13 @@
-This backend. Name is "Дерево сервисов"
-
-Я использовал SQLACLHEMY и REST API
+"Дерево сервисов"
+# Запуск
+* docker-compose pull
+* docker-compose up
+# Технологии
+* Sqlalchemy https://flask-sqlalchemy.palletsprojects.com
+* Restfull api https://flask-restful.readthedocs.io/en/latest/
+* Nginx https://nginx.org/ru/
+* Flask Migration https://flask-migrate.readthedocs.io
+* APScheduler https://pypi.org/project/APScheduler/
 
 Сделанно 3 сервиса
 1) Purchase serivce
@@ -10,11 +17,9 @@ This backend. Name is "Дерево сервисов"
 Каждый сервис имеет свой отдельный сервер. 
 Работу с информацией, как я писал выше, помогает FLASK SQLALCHEMY.
 
-В качестве базы данных выбрана SQLITE. У каждого сервиса своя база данных.
+В качестве базы данных выбрана postgresql. У каждого сервиса своя база данных.
 
-Архитектура:
-
-
+# Архитектура:
 
 Архитектура выглядит, как "Дерево" соответсвенно такое название.
 
@@ -116,12 +121,20 @@ This backend. Name is "Дерево сервисов"
             * Desceiption: Get crafts factory
         *   put - params[factory_id: int, craft_id: int, product_id :int, shop_id : int, interval_delivary: int]
             * Description: Put craft by factory
-# Tests or 
+# Tests
 
-* purchase swagger: /purchase/swagger
-* shop swagger: /shop/swagger
-* factory swagger: /factory/swagger
+* purchase swagger: /api/purchase/doc
+* shop swagger: /api/shop/doc
+* factory swagger: /api/factory/doc
 
-* postman : 
+# Имеется Migration
+* Она нужна для удобства в расширении базы данных.
 
+# NGINX
+
+* С помощью этого сервиса имеем прокси.
+* Запросы по одному порту обеспечены.
+
+# Планировщик - APScheduler.
+* С помощью него реализована доставка с заводов
 
