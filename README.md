@@ -21,7 +21,8 @@
 
 # Архитектура:
 
-![SQLite370 svg](https://user-images.githubusercontent.com/72697029/111699447-30581080-8849-11eb-9df9-ce1e26f9df3b.png)
+![Purple and Orange Shapes Electronics Facebook Feed Ad (1)](https://user-images.githubusercontent.com/72697029/111699688-84fb8b80-8849-11eb-94d8-fc0f82dc0104.png)
+
 
 Архитектура выглядит, как "Дерево" соответсвенно такое название.
 
