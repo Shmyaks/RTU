@@ -1,9 +1,11 @@
 "Дерево сервисов"
 
 # Технологии
-* Sqlalchemy
-* Restfull api!
-* Nginx
+* Sqlalchemy https://flask-sqlalchemy.palletsprojects.com
+* Restfull api https://flask-restful.readthedocs.io/en/latest/
+* Nginx https://nginx.org/ru/
+* Flask Migration https://flask-migrate.readthedocs.io
+* APScheduler https://pypi.org/project/APScheduler/
 
 Сделанно 3 сервиса
 1) Purchase serivce
@@ -129,5 +131,11 @@
 * Она нужна для удобства в расширении базы данных.
 
 
+# NGIX
 
+* С помощью этого сервиса имеем прокси.
+* Запросы по одному порту обеспечены.
+
+# Планировщик - APScheduler.
+* С помощью него реализована доставка с заводов
 
