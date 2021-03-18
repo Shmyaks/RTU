@@ -1,5 +1,7 @@
 "Дерево сервисов"
-
+# Запуск
+* docker-compose pull
+* docker-compose update
 # Технологии
 * Sqlalchemy https://flask-sqlalchemy.palletsprojects.com
 * Restfull api https://flask-restful.readthedocs.io/en/latest/
@@ -18,8 +20,6 @@
 В качестве базы данных выбрана postgresql. У каждого сервиса своя база данных.
 
 # Архитектура:
-
-![Purple and Orange Shapes Electronics Facebook Feed Ad](https://user-images.githubusercontent.com/72697029/111568989-ddcc1500-87b2-11eb-8e92-c7b2c8a6e604.png)
 
 Архитектура выглядит, как "Дерево" соответсвенно такое название.
 
@@ -130,8 +130,7 @@
 # Имеется Migration
 * Она нужна для удобства в расширении базы данных.
 
-
-# NGIX
+# NGINX
 
 * С помощью этого сервиса имеем прокси.
 * Запросы по одному порту обеспечены.
