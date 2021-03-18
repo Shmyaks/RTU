@@ -13,7 +13,7 @@ def check_storage(factory_id, product_id):
     body['shop_id'] = storage.shop_id
 
     try:
-        result = requests.post('http://127.0.0.1:5002/shop/delivery', json = body)
+        result = requests.post('http://127.0.0.1:80/api/shop/delivery', json = body)
     except requests.exceptions.ConnectionError:
         storage.product_storage += storage.craft_count #if connect error add to storage
 

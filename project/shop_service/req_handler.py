@@ -1,8 +1,4 @@
 #This is request handler.
-import sys
-from datetime import datetime
-from operator import pos
-from typing import Dict
 from flask_restful_swagger_3 import Resource
 from flask import jsonify
 from flask_restful_swagger_3 import swagger
@@ -11,8 +7,6 @@ from flask_restful.reqparse import RequestParser
 from database import Shop, Product, Category, TableCategory, Check
 from __main__ import db
 from somefunc import to_dict, tuple_to_dict
-import sys
-sys.path.append('d:\\RTU BACK\\RTU\\project')
 from models import ShopSHEMA, Product_listSHEMA, Category_listSHEMA, MessageSHEMA, ExampleSearchProduct, PurchaseSHEMA, ExampleSetProduct, Check_listSHEMA, ExampleSETlistChecks, ExampleSETlistProduct #MODELS Dictionary database
 
 
@@ -136,6 +130,7 @@ class Product_routes(Resource):
     @swagger.parameter(_in='query', name='shop_id', description = "Add product to shop", schema={'type': 'integer'}, required = True)
     @swagger.parameter(_in='query', name = 'products_id', description = 'Filter by products_id', schema = ExampleSETlistProduct)
     def get(self):
+        '''Get products'''
         get_parser = RequestParser()
         get_parser.add_argument('shop_id', type = int, required = True)
         get_parser.add_argument('products_id', action = 'append', type = int)
@@ -285,7 +280,7 @@ class Shop_buy(Resource):
         args['products'] = sorted_dict
         
         try:
-            result = requests.post('http://127.0.0.1:5001/purchase', json = args)
+            result = requests.post('http://127.0.0.1:80/api/purchase', json = args)
         except requests.exceptions.ConnectionError:
             return jsonify({'message':'Purchase service does not work'})
 
@@ -343,7 +338,7 @@ class Checks_products(Resource):
 
         print(args)
         try:
-            result = requests.get('http://127.0.0.1:5001/purchases', json = args)
+            result = requests.get('http://127.0.0.1:80/api/purchases', json = args)
         except requests.exceptions.ConnectionError:
             return jsonify({'message':'Purchase service does not work'})
         

@@ -1,16 +1,12 @@
 #This is request handler.
-from datetime import datetime
 from flask_restful_swagger_3 import Resource
 from flask import jsonify
 from flask_restful_swagger_3 import swagger
 from flask_restful.reqparse import RequestParser
-from database import Factory, Crafting_items
+from database import Factory, Crafting
 from __main__ import db, scheduler
 from secrets import  token_hex
 from somefunc import to_dict, check_storage
-
-import sys
-sys.path.append('d:\\RTU BACK\\RTU\\project')
 from models import FactorySHEMA, MessageSHEMA, crafting_list_itemsSHEMA
 
 @swagger.tags('Factory')
@@ -69,7 +65,7 @@ class Factories_routes(Resource):
 
         factory = Factory.query.filter_by(factory_id = args['factory_id']).first_or_404(description='The factory_id {} does not exist '.format(args['factory_id'])) 
 
-        crafts = factory.crafting_items.all()
+        crafts = factory.crafts.all()
         for craft in crafts:
             scheduler.remove_job(job_id = craft.scheduler_id)
 
@@ -101,14 +97,14 @@ class Craft(Resource):
         args = post_parser.parse_args()
 
         factory = Factory.query.filter_by(factory_id = args['factory_id']).first_or_404(description='The factory_id {} does not exist '.format(args['factory_id'])) 
-        storage = factory.crafting_items.filter_by(product_id = args['product_id']).first()
+        storage = factory.crafts.filter_by(product_id = args['product_id']).first()
         print(storage)
         if storage:
             return {'message': 'Product is crafting in factory {}'.format(factory.factory_id)}, 409
         
         args['scheduler_id'] = token_hex(nbytes=16)
 
-        craft = Crafting_items(**args)
+        craft = Crafting(**args)
         
         db.session.add(craft)
         db.session.commit()
@@ -129,7 +125,7 @@ class Craft(Resource):
 
         factory = Factory.query.filter_by(factory_id = args['factory_id']).first_or_404(description='The factory_id {} does not exist '.format(args['factory_id'])) 
 
-        return jsonify(to_dict(factory.crafting_items.all(), crafting_list_itemsSHEMA, many = True))
+        return jsonify(to_dict(factory.crafts.all(), crafting_list_itemsSHEMA, many = True))
 
     @swagger.reorder_with(MessageSHEMA, response_code=200, description="OK")
     @swagger.reorder_with(MessageSHEMA, response_code=404, description="The factory pr craft does not exist")
@@ -149,7 +145,7 @@ class Craft(Resource):
         args = put_parser.parse_args()
 
         factory = Factory.query.filter_by(factory_id = args['factory_id']).first_or_404(description='The factory_id {} does not exist '.format(args['factory_id']))   
-        craft = factory.crafting_items.filter_by(craft_id = args['craft_id']).first_or_404(description='The factory_id {} does not exist '.format(args['factory_id']))
+        craft = factory.crafts.filter_by(craft_id = args['craft_id']).first_or_404(description='The factory_id {} does not exist '.format(args['factory_id']))
 
         if args['product_id']:
             craft.product_id = args['product_id']

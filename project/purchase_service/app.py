@@ -1,35 +1,32 @@
 #it is base server
 from flask import Flask
-from flask_restful_swagger_3 import Api, swagger, get_swagger_blueprint
+from flask_restful_swagger_3 import Api, get_swagger_blueprint
 from flask_sqlalchemy import SQLAlchemy
-from flask_jwt_extended import JWTManager
 from flask_script import Manager
 from flask_migrate import MigrateCommand, Migrate
 import os
-
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///jobs.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_SORT_KEYS'] = False
 
-servers = [{"url": "http://localhost:5001"}]
+servers = [{"url": "http://localhost:80"}]
 
 api = Api(app, servers = servers)
 db = SQLAlchemy(app)
-jwt = JWTManager(app)
 
 SWAGGER_URL = '/api/doc'  # URL for exposing Swagsger UI (without trailing '/')
 API_URL = 'swagger.json'  # Our API url (can of course be a local resource)
 
 from req_handler import Purchase_routes, User_routes, User_categories_routes, User_registration, Purchase_get_by_shop
 
+app.config.setdefault('SWAGGER_BLUEPRINT_URL_PREFIX', '/api/purchase/doc')
+swagger_blueprint_url_prefix = app.config.get('SWAGGER_BLUEPRINT_URL_PREFIX', '')
+
 migrate = Migrate(app, db)
 manager = Manager(app)
 manager.add_command('db', MigrateCommand)
-
-app.config.setdefault('SWAGGER_BLUEPRINT_URL_PREFIX', '/purchase/swagger')
-swagger_blueprint_url_prefix = app.config.get('SWAGGER_BLUEPRINT_URL_PREFIX', '')
 
 with app.app_context():
     swagger_blueprint = get_swagger_blueprint(
@@ -38,18 +35,16 @@ with app.app_context():
         swagger_url=API_URL,
         title='Factory service', version='1', servers=servers)
 
-api.add_resource(Purchase_routes, "/purchase")
-api.add_resource(User_routes, '/user/<int:user_id>')
-api.add_resource(User_categories_routes, '/user/own_categories')
-api.add_resource(User_registration, '/register')
-api.add_resource(Purchase_get_by_shop, "/purchases")
-
-db.create_all()
+api.add_resource(Purchase_routes, "/api/purchase")
+api.add_resource(User_routes, '/api/user/<int:user_id>')
+api.add_resource(User_categories_routes, '/api/user/own_categories')
+api.add_resource(User_registration, '/api/user/register')
+api.add_resource(Purchase_get_by_shop, "/api/purchases")
 
 app.register_blueprint(swagger_blueprint,  url_prefix=swagger_blueprint_url_prefix)
-
+db.create_all()
 
 if __name__ == '__main__':
     manager.run()
-    app.run(host='0.0.0.0', debug=True, port=5001)
+    app.run(host='0.0.0.0', debug=True, port=5000)
 

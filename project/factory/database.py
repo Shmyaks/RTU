@@ -4,9 +4,9 @@
 from __main__ import db
 
 class Factory(db.Model):
-    factory_id = db.Column(db.Integer, primary_key = True)
+    factory_id = db.Column(db.Integer, primary_key = True, nullable = True, unique = True)
     factory_name = db.Column(db.String(32), nullable = False)
-    crafting_items = db.relationship('Crafting_items', backref = 'Factory', lazy = 'dynamic')
+    crafts = db.relationship('Crafting', backref = 'Factory')
 
     def __init__(self, **kwargs):
         self.factory_name = kwargs.get('factory_name')
@@ -14,9 +14,11 @@ class Factory(db.Model):
     def __repr__(self):
         return '<factory_id %r>' % self.factory_id
 
-class Crafting_items(db.Model):
+
+class Crafting(db.Model):
+
     craft_id = db.Column(db.Integer, primary_key = True)
-    factory_id = db.Column(db.Integer, db.ForeignKey('factory.factory_id'))
+    factory = db.Column(db.Integer, db.ForeignKey('factory.factory_id'), nullable = True)
     product_id = db.Column(db.Integer, nullable = False)
     craft_count = db.Column(db.Integer, default = 0)
     shop_id = db.Column(db.Integer)

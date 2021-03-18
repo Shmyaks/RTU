@@ -8,11 +8,10 @@ services:
     depends_on:
       - db_purchase
     volumes: 
-      - ./project/purchase_service/migrations:/usr/src/app/migrations
+      - ./project/purchase_service/migrations/:/usr/src/app/migrations/
       - ./entrypoint.sh:/usr/src/app/entrypoint.sh
-      - ./project/models.py:/usr/src/models.py
     environment:
-      - DATABASE_URL=postgres+psycopg2://admin:123456@db_purchase:5432/database
+      - DATABASE_URL=postgresql+psycopg2://admin:123456@db_purchase:5432/database
   shop_service:
     build: ./project/shop_service
     restart: always
@@ -21,24 +20,22 @@ services:
     depends_on:
       - db_shop
     volumes: 
-      - ./project/shop_service/migrations:/usr/src/app/migrations
+      - ./project/shop_service/migrations/:/usr/src/app/migrations/
       - ./entrypoint.sh:/usr/src/app/entrypoint.sh
-      - ./project/models.py:/usr/src/models.py
     environment:
-      - DATABASE_URL=postgres+psycopg2://admin:123456@db_shop:5432/database
+      - DATABASE_URL=postgresql+psycopg2://admin:123456@db_shop:5432/database
   factory:
     build: ./project/factory
     restart: always
     ports: 
-      - 5003:5003
+      - 5002:5002
     depends_on:
       - db_factory
     volumes: 
-      - ./project/factory/migrations:/usr/src/app/migration
+      - ./project/factory/migrations/:/usr/src/app/migrations/
       - ./entrypoint.sh:/usr/src/app/entrypoint.sh
-      - ./project/models.py:/usr/src/models.py
     environment:
-      - DATABASE_URL=postgres+psycopg2://admin:123456@db_factory:5432/database
+      - DATABASE_URL=postgresql+psycopg2://admin:123456@db_factory:5432/database
   db_purchase:
     image: postgres:13.2-alpine
     restart: always
@@ -66,6 +63,16 @@ services:
       - POSTGRES_DB=database
     volumes: 
       - pgfactory:/var/lib/postgresql/data
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./project/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - 80:80
+    links:
+    - factory
+    - purchase_service
+    - shop_service
 volumes: 
   pgshop:
   pgpurchase:

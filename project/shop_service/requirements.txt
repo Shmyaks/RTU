@@ -1,7 +1,7 @@
 flask
 flask-restful-swagger-3
 flask_sqlalchemy
-flask_jwt_extended
-psycopg2
 Flask-Migrate
 Flask-Script
+requests
+psycopg2-binary

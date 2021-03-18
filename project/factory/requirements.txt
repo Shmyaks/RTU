@@ -1,6 +1,8 @@
 flask
 flask-restful-swagger-3
 flask_sqlalchemy
-pip install psycopg2-binary
 Flask-Migrate
 Flask-Script
+APScheduler
+requests
+psycopg2-binary

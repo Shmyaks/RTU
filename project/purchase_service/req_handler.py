@@ -1,15 +1,10 @@
 """Request handler purchase_service."""
-from datetime import datetime
-from typing import get_args
 from flask_restful_swagger_3 import Resource
 from flask import jsonify
 from flask_restful_swagger_3 import swagger
 from flask_restful.reqparse import RequestParser
 from database import  Users, User_category, Purchase, Purchase_items
 from __main__ import db
-
-import sys
-sys.path.append('d:\\RTU BACK\\RTU\\project')
 from somefunc import to_dict
 from models import UsersSHEMA, PurchaseSHEMA, Purchase_listSHEMA, UserCategory_listSHEMA, MessageSHEMA, ExampleSETlistPurcase#MODELS Dictionary database
 

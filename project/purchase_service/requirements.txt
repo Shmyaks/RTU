@@ -3,4 +3,4 @@ flask-restful-swagger-3
 flask_sqlalchemy
 Flask-Migrate
 Flask-Script
-psycopg2
+psycopg2-binary
