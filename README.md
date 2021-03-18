@@ -1,6 +1,9 @@
-This backend. Name is "Дерево сервисов"
+"Дерево сервисов"
 
-Я использовал SQLACLHEMY и REST API
+# Технологии
+* Sqlalchemy
+* Restfull api!
+* Nginx
 
 Сделанно 3 сервиса
 1) Purchase serivce
@@ -10,11 +13,11 @@ This backend. Name is "Дерево сервисов"
 Каждый сервис имеет свой отдельный сервер. 
 Работу с информацией, как я писал выше, помогает FLASK SQLALCHEMY.
 
-В качестве базы данных выбрана SQLITE. У каждого сервиса своя база данных.
+В качестве базы данных выбрана postgresql. У каждого сервиса своя база данных.
 
 Архитектура:
 
-
+[Purple and Orange Shapes Electronics Facebook Feed Ad](https://user-images.githubusercontent.com/72697029/111568989-ddcc1500-87b2-11eb-8e92-c7b2c8a6e604.png)
 
 Архитектура выглядит, как "Дерево" соответсвенно такое название.
 
@@ -116,12 +119,15 @@ This backend. Name is "Дерево сервисов"
             * Desceiption: Get crafts factory
         *   put - params[factory_id: int, craft_id: int, product_id :int, shop_id : int, interval_delivary: int]
             * Description: Put craft by factory
-# Tests or 
+# Tests
 
-* purchase swagger: /purchase/swagger
-* shop swagger: /shop/swagger
-* factory swagger: /factory/swagger
+* purchase swagger: /api/purchase/doc
+* shop swagger: /api/shop/doc
+* factory swagger: /api/factory/doc
 
-* postman : 
+# Имеется Migration
+* Она нужна для удобства в расширении базы данных.
+
+
 
 
