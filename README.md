@@ -15,7 +15,7 @@
 
 В качестве базы данных выбрана postgresql. У каждого сервиса своя база данных.
 
-Архитектура:
+# Архитектура:
 
 ![Purple and Orange Shapes Electronics Facebook Feed Ad](https://user-images.githubusercontent.com/72697029/111568989-ddcc1500-87b2-11eb-8e92-c7b2c8a6e604.png)
 
