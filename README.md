@@ -17,9 +17,11 @@
 Каждый сервис имеет свой отдельный сервер. 
 Работу с информацией, как я писал выше, помогает FLASK SQLALCHEMY.
 
-В качестве базы данных выбрана postgresql. У каждого сервиса своя база данных.
+В качестве базы данных выбрана sqlite. У каждого сервиса своя база данных.
 
 # Архитектура:
+
+![SQLite370 svg](https://user-images.githubusercontent.com/72697029/111699447-30581080-8849-11eb-9df9-ce1e26f9df3b.png)
 
 Архитектура выглядит, как "Дерево" соответсвенно такое название.
 
@@ -38,7 +40,7 @@
 
     * /api/user/<int:user_id>
         * get - params[user_id: int]
-            * Decirption: get user by user_id
+            * Description: get user by user_id
         * put - params[first_name: string, second_name: string]
             * Description: Change first_name or second_name'
             
@@ -126,11 +128,13 @@
 * purchase swagger: /api/purchase/doc
 * shop swagger: /api/shop/doc
 * factory swagger: /api/factory/doc
+* postman: https://www.postman.com/shmyaks/workspace/rtu-backend-by-shmyaks/overview
 
 # Имеется Migration
-* Она нужна для удобства в расширении базы данных.
+* Расширяемая база.
 
 # NGINX
+* localhost:80
 
 * С помощью этого сервиса имеем прокси.
 * Запросы по одному порту обеспечены.
